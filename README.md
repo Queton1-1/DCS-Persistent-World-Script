@@ -1,21 +1,14 @@
 # DCS-Persistent-World-Script
 
-(FR) Script pour sauvegarder la progression en mission si implémenté.
+= FR =
+Script pour sauvegarder la progression en mission si implémenté.
 Les unitées sol, statiques et navires (hors portes-avions) détruits seront listés et retirés au prochain lancement.
 Les unités spawnés pendant la partie peuvent être sauvés.
 Basé sur les travaux des excellents Pikey et Surrexen mais énormément de refonte et beaucoup d'ajout.
 
-(EN) Script to save mission progression.
-All ground units, statics and boats (not carriers) destroyed will be list and destroy on next load.
-During game, spawned units can be saved.
-Based on the awesome Pikey and Surrexen works but with lots of rebuilds et adds.
-
 -- Mises à jour / Updates --
 /!\ Rien n'est jamais parfait, ce script évoluera au fil des idées d'améliorations, des bugs éventuels à corriger et surtout du temps que je peux y consacrer.
 
-/!\ Nothing's perfect, but if you track bugs and share it, i will do my best to update the script. I'm not professionnal and like most of us, i have to share my time between familly and work also.
-
-= FR =
 -- Installation --
 Il suffit de créer un trigger avec pour condition 'temps sup. à' (1) et charger le script .lua contenu dans le .zip
 Ne nécessite aucune dépendance (Moose, Mist, etc...) et ne gène pas leur fonctionnement.
@@ -46,7 +39,16 @@ Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved
 
 
 
+
 = EN =
+Script to save mission progression.
+All ground units, statics and boats (not carriers) destroyed will be list and destroy on next load.
+During game, spawned units can be saved.
+Based on the awesome Pikey and Surrexen works but with lots of rebuilds et adds.
+
+-- Updates --
+/!\ Nothing's perfect, but if you track bugs and share it, i will do my best to update the script. I'm not professionnal and like most of us, i have to share my time between familly and work also.
+
 -- Installation --
 Just create a trigger with condition time more' (1 or many seconds) and load the script .lua from .zip
 Mist or Moose libs not needed.
@@ -66,8 +68,7 @@ just add -- like below :
     --sanitizeModule('io' ),
     --sanitizeModule('lfs' ),
 
-Dont forget to se t few parameters in the top of the script for every use. (Time between saves & filename prefix)
-
+Dont forget to set few parameters in the top of the script for every use. (Time between saves & filename prefix)
 
 -- Use --
 Easy
