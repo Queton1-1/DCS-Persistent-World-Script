@@ -1,5 +1,7 @@
 # DCS-Persistent-World-Script
 
+[Download : Releases here](https://github.com/Queton1-1/DCS-Persistent-World-Script/releases)
+
 = FR =  
 Script pour sauvegarder la progression en mission si implémenté.  
 Les unitées sol, statiques et navires (hors portes-avions) détruits seront listés et retirés au prochain lancement.  
@@ -38,9 +40,9 @@ Si le script est bien chargé, c'est automatique et des messages s'afficheront �
 Les fichiers de sauvegardes se situerons dans le dossier d'installation de DCS (/Program File/...) >>(versions antérieures à v2.09)  
 Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS/Missions/_PWS_Saves) >>(à partir de v2.09)  
 
-
-
-
+  
+  
+  
 = EN =  
 Script to save mission progression.  
 All ground units, statics and boats (not carriers) destroyed will be list and destroy on next load.  
