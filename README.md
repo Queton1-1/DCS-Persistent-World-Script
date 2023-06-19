@@ -1,10 +1,15 @@
 # DCS-Persistent-World-Script
 
 FR :
+
 Script pour sauvegarder la progression en mission si implémenté.
+
 Les unitées sol, statiques et navires (hors portes-avions) détruits seront listés et retirés au prochain lancement.
+
 Les unités spawnés pendant la partie peuvent être sauvés.
+
 Basé sur les travaux des excellents Pikey et Surrexen mais énormément de refonte et beaucoup d'ajout.
+
 
 Mises à jour / Updates
 /!\ Rien n'est jamais parfait, ce script évoluera au fil des idées d'améliorations, des bugs éventuels à corriger et surtout du temps que je peux y consacrer.
