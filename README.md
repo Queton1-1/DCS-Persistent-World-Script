@@ -1,6 +1,6 @@
 # DCS-Persistent-World-Script
 
-[Download : Releases here](https://github.com/Queton1-1/DCS-Persistent-World-Script/releases)
+Pour télécharger le script, rdv à la page [Releases](https://github.com/Queton1-1/DCS-Persistent-World-Script/releases)
 
 = FR =  
 Script pour sauvegarder la progression en mission si implémenté.  
@@ -79,3 +79,7 @@ If well done un mission editor, messages will be displayed.
 Saves file will be created in DCS application folder (/Program Files/...) >>(before v2.09)  
 Saves file will be created in DCS application folder (/Saved Games/DCS/Missions/_PWS_Saves) >>(after v2.09)  
 Enjoy!  
+  
+o7  
+
+Quéton 1-1 | [YouTube](https://www.youtube.com/channel/UCkYOYKrKMwCV-3yASP9gf8Q) | [Twitch](https://www.twitch.tv/queton11) | [DCS UserFiles](https://www.digitalcombatsimulator.com/fr/files/filter/user-is-TheJGi/apply/) | [GitHub](https://github.com/Queton1-1)
