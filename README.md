@@ -5,7 +5,7 @@ Pour télécharger le script, rdv à la page [Releases](https://github.com/Queto
 = FR =  
 Script pour sauvegarder la progression en mission si implémenté.  
 Les unitées sol, statiques et navires (hors portes-avions) détruits seront listés et retirés au prochain lancement.  
-Les unités spawnés pendant la partie peuvent être sauvés.  
+Les groupes, unités & marks spawnés pendant la partie peuvent être sauvés.  
 Basé sur les travaux des excellents Pikey et Surrexen mais énormément de refonte et beaucoup d'ajout.  
 
 
