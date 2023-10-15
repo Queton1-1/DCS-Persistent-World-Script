@@ -10,10 +10,14 @@
 
 --[[%%%%% CHANGELOG %%%%%
 
+    2.13i
+        Suppression des doublons, ajout unités spawés dans PWS.escapeTypeFromDeadList 
+
     2.13h
         Refactorisation globale, notamment 'spawned'
         Ajustements 'escapeTypeFromDeadList'
         Refonte 'GroundGroupSpawn()' & '_Tasks'
+        Gestion groupes multi-unités
 
     2.13g
         Correction des fonctions 'spawned' pour spawn multi-unités
@@ -810,7 +814,7 @@
                                 -- 1 UNIT / 2 WEAPON / 3 STATIC / 4 BASE / 5 SCENERY / 6 CARGO
                                 DeadUnitCategory 		 = Event.initiator:getDesc().category 
                                 -- 0 AIRPLANE / 1 HELICOPTER / 2 GROUND_UNIT / 3 SHIP / 4 STRUCTURE
-                                DeadUnitCoalition 	 = Event.initiator:getCoalition()
+                                DeadUnitCoalition 	   = Event.initiator:getCoalition()
                                 --DeadGroupName		     = Event.initiator:getGroup():getName()
                                 DeadUnitName			 = Event.initiator:getName()
                                 DeadUnitType			 = Event.initiator:getTypeName()
@@ -847,9 +851,6 @@
                                             for i=1, #PWS_Units do
                                                 if PWS_Units[i] == DeadUnitName then match = match + 1 end
                                             end
-                                            -- for i=1, #PWS_Spawned do
-                                            --     if PWS_Spawned[i].unitGroupName == DeadGroupName then match = match + 1 end
-                                            -- end
                                             if match == 0 then
                                                 PWS_Units[#PWS_Units+1] = DeadUnitName
                                             end
@@ -937,6 +938,7 @@
                                                     }
                                                 }
                                             end
+                                            PWS.escapeTypeFromDeadList[#PWS.escapeTypeFromDeadList+1] = birthUnitName
                                         end
                                     -- elseif ( birthUnitObjectCategory == 3 ) then 									-- STATIC
                                     -- 	SpawnedTableLength = SpawnedTableLength + 1			
