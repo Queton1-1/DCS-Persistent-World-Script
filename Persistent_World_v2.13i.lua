@@ -10,6 +10,9 @@
 
 --[[%%%%% CHANGELOG %%%%%
 
+    2.13j
+        Correction temporaire bug Event.target:getCoalition() sur world.event.S_EVENT_KILL
+
     2.13i
         Suppression des doublons, ajout unités spawés dans PWS.escapeTypeFromDeadList 
 
@@ -64,8 +67,7 @@
 --]]
 
 --[[%%%%% TODO - NEXT FEATURES %%%%%
-
-    Ctrl des doublons spawned/died
+        Ctrl des doublons spawned/died
     Correction fonction et variable : PWS.
     Integration Tasks
     Integration suvegarde des scores
@@ -804,8 +806,8 @@
         --%%% EVENT LOOP - ON DEAD, LOST, KILL %%%
             PWS_ONDEADEVENTHANDLER = {}
             function PWS_ONDEADEVENTHANDLER:onEvent(Event)
-                if Event.id == world.event.S_EVENT_DEAD or Event.id == world.event.S_EVENT_UNIT_LOST or Event.id == world.event.S_EVENT_KILL then
-                    if Event.initiator and Event.initiator:getCoalition() ~= nil then
+                if Event.id == world.event.S_EVENT_DEAD or Event.id == world.event.S_EVENT_UNIT_LOST then --or Event.id == world.event.S_EVENT_KILL then
+                    if Event.initiator then --and Event.initiator:getCoalition() ~= nil then
                         if ( Event.initiator:getCategory() == 1 or Event.initiator:getCategory() == 3 ) then -- UNIT or STATIC
                             
                             if Event.id == world.event.S_EVENT_DEAD or Event.id == world.event.S_EVENT_UNIT_LOST then
