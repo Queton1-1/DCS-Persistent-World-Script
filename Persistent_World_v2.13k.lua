@@ -10,6 +10,10 @@
 
 --[[%%%%% CHANGELOG %%%%%
 
+    2.13k
+        Correction bug Event.initiator:getCategory() > Object.getCategory(Event.initiator)
+        Ajout debug mode et entrées dans le log
+
     2.13j
         Correction temporaire bug Event.target:getCoalition() sur world.event.S_EVENT_KILL
 
@@ -136,6 +140,9 @@
         "som",
     }
 
+    --> Mode Mode
+    PWS.debugMode = false
+
 
 
 --%%%%% VARIABLES %%%%%
@@ -157,6 +164,13 @@
     --trigger.action.outText("Persistent World | WriteDir : "..lfs.writedir(),360)
 
 --%%%%% TOOLKIT FUNCTIONS %%%%%
+    --%%% DEBUG env.info %%%
+    local function DebugInfo(_msg)
+        if PWS.debugMode == true then
+            env.info("Persistent World | ".._msg)
+        end
+    end
+
     --%%% SERIALIZE %%%
     function IntegratedbasicSerialize(s)
         if s == nil then
@@ -514,7 +528,6 @@
 
     --%%% UPDATE SPAWNED TABLE %%%
     function PWS.UpdateSpawnedTable()
-        --PWS.PrintSpawned()
         if PWS.saveBirthBlue == true or PWS.saveBirthRed == true then
             _tempTable = {}
             for i = 1, #PWS_Spawned do
@@ -539,7 +552,7 @@
                                 posX = _currentPos.x,
                             }
                         else
-                            --trigger.action.outText("Persistent World | Update Spawned : L'unité "..PWS_Spawned[i].units[i2].unitName.." n'existe plus",30)
+                            DebugInfo("Update Spawned : L'unité "..PWS_Spawned[i].units[i2].unitName.." n'existe plus",30)
                         end
                     end
                     if _alive > 0 then
@@ -550,14 +563,14 @@
                         _tempTable[#_tempTable].unitGroupName = PWS_Spawned[i].unitGroupName
                         _tempTable[#_tempTable].units = _tempUnitsTable
                     else
-                        --trigger.action.outText("Persistent World | Update Spawned : L'unité "..PWS_Spawned[i].unitGroupName.." n'existe plus",30)
+                        DebugInfo("Update Spawned : L'unité "..PWS_Spawned[i].unitGroupName.." n'existe plus",30)
                     end -- group alive
                 else
-                    --trigger.action.outText("Persistent World | Update Spawned : 1 loop skipped, a nil value ",5)
+                    DebugInfo("Update Spawned : 1 loop skipped, a nil value ",5)
                 end -- group exist
             end
             PWS_Spawned = _tempTable
-            --trigger.action.outText("Persistent World | Update Spawned : complete",5)
+            DebugInfo("Update Spawned complete ("..#PWS_Spawned.. ")")
         end
     end
 
@@ -574,7 +587,7 @@
                         if string.match(_worldMarks[i].text, PWS.escapeTextFromMarksList[y]) then _match = _match + 1 end
                     end
                     if _match ~= 0 then
-                        --trigger.action.outText("Persistent World | Mark ignored", 5)
+                        DebugInfo("Mark ignored", 5)
                     else
                         _tempTable[#_tempTable+1] = {}
                         _tempTable[#_tempTable].idx = _worldMarks[i].idx
@@ -585,7 +598,7 @@
                 end
             end
             PWS_Marks = _tempTable
-            --trigger.action.outText("Persistent World | Update Update Marks : complete",5)
+            DebugInfo("Update Marks complete ("..#PWS_Marks..")",5)
         end
     end
 
@@ -595,7 +608,7 @@
         _deadUnitsStr = IntegratedserializeWithCycles("PWS_Units", PWS_Units)
         writemission(_deadUnitsStr, PWS.deadUnitsSaveFile)
         trigger.action.outText("Persistent World | Progress Has Been Saved", 2)
-        env.info("Persistent World | Dead units Saved")
+        env.info("Persistent World | Dead units Saved ("..#PWS_Units..")")
         return time + PWS.SaveSchedule
     end
 
@@ -608,8 +621,7 @@
     function PWS.SaveDeadStatics(timeloop, time)
         _deadStaticsStr = IntegratedserializeWithCycles("PWS_Statics", PWS_Statics)
         writemission(_deadStaticsStr, PWS.deadStaticsSaveFile)
-        --trigger.action.outText("Progress Has Been Saved", 15)
-        env.info("Persistent World | Dead statics Saved")
+        env.info("Persistent World | Dead statics Saved ("..#PWS_Statics..")")
         return time + PWS.SaveSchedule
     end
 
@@ -621,13 +633,10 @@
     --%%% SAVE FUNCTION FOR SPAWNED %%%
     function PWS.SaveSpawned(timeloop, time)
         
-        --PWS_updateSpawnedTable()
         PWS.UpdateSpawnedTable()
         
         _spawnedStr = IntegratedserializeWithCycles("PWS_Spawned", PWS_Spawned)
-        writemission(_spawnedStr, PWS.spawnedUnitsSaveFile)
-        --trigger.action.outText("Persistent World | Births Has Been Saved", 2)
-        env.info("Persistent World | Spawned groups Saved")
+        env.info("Persistent World | Spawned groups Saved ("..#PWS_Spawned..")")
         return time + PWS.SaveSchedule
     end
 
@@ -645,7 +654,7 @@
         
         _marksStr = IntegratedserializeWithCycles("PWS_Marks", PWS_Marks)
         writemission(_marksStr, PWS.marksSaveFile)
-        env.info("Persistent World | Marks Saved")
+        env.info("Persistent World | Marks Saved ("..#PWS_Marks..")")
         return time + PWS.SaveSchedule
     end
 
@@ -660,6 +669,11 @@
     --> Counters
     PWSDeletedUnitCount = 0
     PWSDeletedStaticCount = 0
+
+    --> Debug Mode
+    if PWS.debugMode == true then
+        PWS.SaveSchedule = 60
+    end
 
     --> Loading message
     trigger.action.outText("Persistent World | Loading...  -  Credits : JGi | Quéton 1-1", 5)
@@ -681,11 +695,9 @@
                     Unit.getByName(PWS_Statics[i]):destroy()
                     PWSDeletedUnitCount = PWSDeletedUnitCount + 1
                 else
-                    trigger.action.outText("Static "..i.." Is "..PWS_Statics[i].." And Was Not Found", 2)
                     env.info("Persistent World | Static "..i.." Is "..PWS_Statics[i].." And Was Not Found", 2)
                 end	
             end
-            trigger.action.outText("Persistent World | Removed "..PWSDeletedStaticCount.." Static(s)", 5)
             env.info("Persistent World | Removed "..PWSDeletedStaticCount.." Static(s)", 5)
         else
             PWS_Statics = {}
@@ -701,11 +713,9 @@
                     Unit.getByName(PWS_Units[i]):destroy()
                     PWSDeletedUnitCount = PWSDeletedUnitCount + 1
                 else
-                    trigger.action.outText("Unit "..i.." Is "..PWS_Units[i].." And Was Not Found", 2)
                     env.info("Unit "..i.." Is "..PWS_Units[i].." And Was Not Found")
                 end	
             end
-            trigger.action.outText("Persistent World | Removed "..PWSDeletedUnitCount.." Unit(s)", 5)
             env.info("Persistent World | Removed "..PWSDeletedUnitCount.." Unit(s)")
         else			
             PWS_Units = {}	
@@ -716,7 +726,7 @@
         --%%% LOAD SPAWNED UNITS %%%
         if PWS.saveBirthBlue == true or PWS.saveBirthRed == true then
             if file_exists(PWS.spawnedUnitsSaveFile) then	
-                --trigger.action.outText("Persistent World | Loads units spawned in the past...",5)
+                DebugInfo("Loads units spawned in the past...",5)
                 
                 dofile(PWS.spawnedUnitsSaveFile)
                 
@@ -746,16 +756,13 @@
                             PWS.GroundGroupSpawn(_flag, _name, _points, _units, _freq)
                             restoredUnit = restoredUnit + 1
                         else
-                            trigger.action.outText("Persistent World | Restoring unit : One loop skip, a nil value",5)
                             env.info("Persistent World | Restoring unit : One loop skip, a nil value")
                         end	
                     end
-                    trigger.action.outText("Persistent World | Restored "..restoredUnit.." Unit(s)",5)
                     env.info("Persistent World | Restored "..restoredUnit.." Unit(s)")
 
                 end
             else
-                trigger.action.outText("Persistent World | No Spawned save file",5)
                 env.info("Persistent World | No Spawned save file")			
             end
         end
@@ -763,7 +770,6 @@
         --%%% LOAD MARKS %%%
         if PWS.saveMarksBlue == true or PWS.saveMarksRed == true then
             if file_exists(PWS.marksSaveFile) then	
-                --trigger.action.outText("Persistent World | Loads units spawned in the past...",5)
                 
                 dofile(PWS.marksSaveFile)
                 
@@ -782,16 +788,13 @@
 
                             _restoredMarks = _restoredMarks + 1
                         else
-                            trigger.action.outText("Persistent World | Restoring Marks : One loop skip, a nil value",5)
                             env.info("Persistent World | Restoring Marks : One loop skip, a nil value")
                         end	
                         i = i+1
                     end
-                    trigger.action.outText("Persistent World | Restored ".._restoredMarks.." Mark(s)",5)
                     env.info("Persistent World | Restored ".._restoredMarks.." Mark(s)")
                 end
             else		
-                trigger.action.outText("Persistent World | No Marks save file",5)
                 env.info("Persistent World | No Marks save file")
                 PWS_Marks = {}
             end
@@ -807,15 +810,17 @@
             PWS_ONDEADEVENTHANDLER = {}
             function PWS_ONDEADEVENTHANDLER:onEvent(Event)
                 if Event.id == world.event.S_EVENT_DEAD or Event.id == world.event.S_EVENT_UNIT_LOST then --or Event.id == world.event.S_EVENT_KILL then
+                    DebugInfo("New Event : DEAD")
                     if Event.initiator then --and Event.initiator:getCoalition() ~= nil then
-                        if ( Event.initiator:getCategory() == 1 or Event.initiator:getCategory() == 3 ) then -- UNIT or STATIC
-                            
+                        DebugInfo("DEAD Event.initiator is not nil.")
+                        if ( Object.getCategory(Event.initiator) == 1 or Object.getCategory(Event.initiator) == 3 ) then
+                            DebugInfo("DEAD Event.initiator is Unit or Static ("..Object.getCategory(Event.initiator).."/"..Event.initiator:getCategory()..")")
                             if Event.id == world.event.S_EVENT_DEAD or Event.id == world.event.S_EVENT_UNIT_LOST then
                                 DeadUnit 				 = Event.initiator
-                                DeadUnitObjectCategory = Event.initiator:getCategory() 
+                                DeadUnitObjectCategory = Object.getCategory(Event.initiator) 
                                 -- 1 UNIT / 2 WEAPON / 3 STATIC / 4 BASE / 5 SCENERY / 6 CARGO
                                 DeadUnitCategory 		 = Event.initiator:getDesc().category 
-                                -- 0 AIRPLANE / 1 HELICOPTER / 2 GROUND_UNIT / 3 SHIP / 4 STRUCTURE
+                                -- 0 AIRPLANE / 1 HELICOPTER / 2 GROUND_UNIT / 3 SHIP / 4 STRUCTURE / 5 ???
                                 DeadUnitCoalition 	   = Event.initiator:getCoalition()
                                 --DeadGroupName		     = Event.initiator:getGroup():getName()
                                 DeadUnitName			 = Event.initiator:getName()
@@ -837,9 +842,9 @@
                             if ( DeadUnitCoalition == 1 or DeadUnitCoalition == 2 and PWS.saveDeadBlue == true) then	
                                 if DeadUnitObjectCategory == 1 then -- UNIT
                                     if ( DeadUnitCategory == 2 or DeadUnitCategory == 3 ) then -- GROUND_UNIT or SHIP
-                                        --trigger.action.outText("Persistent World | "..DeadUnitType, 60)
+                                        DebugInfo("DEAD Event.initiator type is Unit")
 
-                                        match = 0
+                                        local match = 0
                                         for i=1, #PWS.escapeTypeFromDeadList do
                                             if string.match(DeadUnitType, PWS.escapeTypeFromDeadList[i]) then match = match + 1 end
                                         end
@@ -847,7 +852,7 @@
                                             if string.match(DeadUnitName, PWS.escapeNameFromDeadList[i]) then match = match + 1 end
                                         end
                                         if match ~= 0 then  
-                                            --trigger.action.outText("Persistent World | Unit ignored", 5)
+                                            DebugInfo(DeadUnitName.." ignored")
                                         else
                                             match = 0
                                             for i=1, #PWS_Units do
@@ -856,7 +861,7 @@
                                             if match == 0 then
                                                 PWS_Units[#PWS_Units+1] = DeadUnitName
                                             end
-                                            --trigger.action.outText("Persistent World | Unit added (Dead)", 10)
+                                            DebugInfo(DeadUnitName.." added to dead list.")
                                         end	
                                     else
                                     end
@@ -868,12 +873,14 @@
                                     if match == 0 then
                                         PWS_Statics[#PWS_Statics+1] = DeadUnitName
                                     end
-                                    --trigger.action.outText("Persistent World | Static "..DeadUnitName.." destroyed ", 10)			
+                                    DebugInfo("Static "..DeadUnitName.." destroyed")			
                                 else
                                 end
                             else
+                                DebugInfo("DEAD Event.initiator as no Coalition") 
                             end
-                            
+                        else
+                            DebugInfo("DEAD Event.initiator is not Unit or Static ("..Object.getCategory(Event.initiator).."/"..Event.initiator:getCategory()..")")
                         end	
                     end
                 end
@@ -886,21 +893,21 @@
                 
                 if Event.id == world.event.S_EVENT_BIRTH then
                     if Event.initiator then
-                        if ( Event.initiator:getCategory() == 1 or Event.initiator:getCategory() == 3 ) then -- UNIT or STATIC
+                        if ( Object.getCategory(Event.initiator) == 1 or Object.getCategory(Event.initiator) == 3 ) then -- UNIT or STATIC
                             if ( Event.initiator:getCoalition() ~= nil ) then
                             
-                                local birthUnit 				 = Event.initiator
-                                local birthUnitObjectCategory = Event.initiator:getCategory()
+                                local birthUnit 				= Event.initiator
+                                local birthUnitObjectCategory   = Object.getCategory(Event.initiator)
                                 -- 1 UNIT / 2 WEAPON / 3 STATIC / 4 BASE / 5 SCENERY / 6 CARGO
-                                local birthUnitCategory 		 = Event.initiator:getDesc().category
+                                local birthUnitCategory         = Event.initiator:getDesc().category
                                 -- 0 AIRPLANE / 1 HELICOPTER / 2 GROUND_UNIT / 3 SHIP / 4 STRUCTURE
-                                birthUnitCoalition 	        = Event.initiator:getCoalition()
-                                BirthGroupName		        = Event.initiator:getGroup():getName()
-                                birthUnitName			    = Event.initiator:getName()
-                                birthUnitType			    = Event.initiator:getTypeName()
-                                currentPos                  = Unit.getByName(birthUnitName):getPoint()
-                                birthUnitPosY 		        = currentPos.z
-                                birthUnitPosX 		        = currentPos.x
+                                birthUnitCoalition              = Event.initiator:getCoalition()
+                                BirthGroupName		            = Event.initiator:getGroup():getName()
+                                birthUnitName			        = Event.initiator:getName()
+                                birthUnitType			        = Event.initiator:getTypeName()
+                                currentPos                      = Unit.getByName(birthUnitName):getPoint()
+                                birthUnitPosY 		            = currentPos.z
+                                birthUnitPosX 		            = currentPos.x
 
                                 if ( birthUnitCoalition == 1 and PWS.saveBirthRed == true or birthUnitCoalition == 2 and PWS.saveBirthBlue == true) then
                                     if birthUnitObjectCategory == 1 and birthUnitCategory == 2 then -- UNIT
@@ -909,7 +916,6 @@
                                             if string.match(birthUnitName, PWS.escapeNameFromBirthList[i]) then _match = _match + 1 end
                                         end
                                         if _match ~= 0 then  
-                                            --trigger.action.outText("Persistent World | Birth Unit ignored", 5)
                                             env.info("Persistent World | Birth Unit ignored")
                                         else
                                             _groupMatch = 0
