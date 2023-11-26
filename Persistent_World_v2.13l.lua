@@ -10,6 +10,10 @@
 
 --[[%%%%% CHANGELOG %%%%%
 
+    2.13l
+        Correction bug sauvegarde Spawned
+        Suppression Static dans Event Birth
+
     2.13k
         Correction bug Event.initiator:getCategory() > Object.getCategory(Event.initiator)
         Ajout debug mode et entrées dans le log
@@ -612,11 +616,6 @@
         return time + PWS.SaveSchedule
     end
 
-    function PWS.SaveDeadUnitsNoArgs()
-        _deadUnitsStr = IntegratedserializeWithCycles("PWS_Units", PWS_Units)
-        writemission(_deadUnitsStr, PWS.deadUnitsSaveFile)
-    end
-
     --%%% SAVE FUNCTION FOR STATICS %%%
     function PWS.SaveDeadStatics(timeloop, time)
         _deadStaticsStr = IntegratedserializeWithCycles("PWS_Statics", PWS_Statics)
@@ -625,27 +624,16 @@
         return time + PWS.SaveSchedule
     end
 
-    function PWS.SaveDeadStaticsNoArgs()
-        _deadStaticsStr = IntegratedserializeWithCycles("PWS_Statics", PWS_Statics)
-        writemission(_deadStaticsStr, PWS.deadStaticsSaveFile)
-    end
-
     --%%% SAVE FUNCTION FOR SPAWNED %%%
     function PWS.SaveSpawned(timeloop, time)
         
         PWS.UpdateSpawnedTable()
         
         _spawnedStr = IntegratedserializeWithCycles("PWS_Spawned", PWS_Spawned)
+        writemission(_spawnedStr, PWS.spawnedUnitsSaveFile)
         env.info("Persistent World | Spawned groups Saved ("..#PWS_Spawned..")")
         return time + PWS.SaveSchedule
     end
-
-    function PWS.SaveSpawnedTableNoArgs()
-        _spawnedStr = IntegratedserializeWithCycles("PWS_Spawned", PWS_Spawned)
-        writemission(_spawnedStr, PWS.spawnedUnitsSaveFile)
-    end
-
-
 
     --%%% SAVE FUNCTION FOR MARKS %%%
     function PWS.SaveMarks(timeloop, time)
@@ -657,13 +645,6 @@
         env.info("Persistent World | Marks Saved ("..#PWS_Marks..")")
         return time + PWS.SaveSchedule
     end
-
-    function PWS.SaveMarksTableNoArgs()
-        _marksStr = IntegratedserializeWithCycles("PWS_Marks", PWS_Marks)
-        writemission(_marksStr, PWS.marksSaveFile)	
-    end
-
-
 
 --%%%%% MAIN () %%%%%
     --> Counters
@@ -893,66 +874,62 @@
                 
                 if Event.id == world.event.S_EVENT_BIRTH then
                     if Event.initiator then
-                        if ( Object.getCategory(Event.initiator) == 1 or Object.getCategory(Event.initiator) == 3 ) then -- UNIT or STATIC
-                            if ( Event.initiator:getCoalition() ~= nil ) then
+                        DebugInfo("BIRTH Event.initiator is not nil.")
+                        if Object.getCategory(Event.initiator) == 1 and Event.initiator:getCoalition() ~= nil then -- UNIT
+                            DebugInfo("BIRTH Event.initiator is Unit ("..Object.getCategory(Event.initiator).."/"..Event.initiator:getCategory()..")")
                             
-                                local birthUnit 				= Event.initiator
-                                local birthUnitObjectCategory   = Object.getCategory(Event.initiator)
-                                -- 1 UNIT / 2 WEAPON / 3 STATIC / 4 BASE / 5 SCENERY / 6 CARGO
-                                local birthUnitCategory         = Event.initiator:getDesc().category
-                                -- 0 AIRPLANE / 1 HELICOPTER / 2 GROUND_UNIT / 3 SHIP / 4 STRUCTURE
-                                birthUnitCoalition              = Event.initiator:getCoalition()
-                                BirthGroupName		            = Event.initiator:getGroup():getName()
-                                birthUnitName			        = Event.initiator:getName()
-                                birthUnitType			        = Event.initiator:getTypeName()
-                                currentPos                      = Unit.getByName(birthUnitName):getPoint()
-                                birthUnitPosY 		            = currentPos.z
-                                birthUnitPosX 		            = currentPos.x
+                            local birthUnit 				= Event.initiator
+                            local birthUnitObjectCategory   = Object.getCategory(Event.initiator)
+                            -- 1 UNIT / 2 WEAPON / 3 STATIC / 4 BASE / 5 SCENERY / 6 CARGO
+                            local birthUnitCategory         = Event.initiator:getDesc().category
+                            -- 0 AIRPLANE / 1 HELICOPTER / 2 GROUND_UNIT / 3 SHIP / 4 STRUCTURE
+                            birthUnitCoalition              = Event.initiator:getCoalition()
+                            BirthGroupName		            = Event.initiator:getGroup():getName()
+                            birthUnitName			        = Event.initiator:getName()
+                            birthUnitType			        = Event.initiator:getTypeName()
+                            currentPos                      = Unit.getByName(birthUnitName):getPoint()
+                            birthUnitPosY 		            = currentPos.z
+                            birthUnitPosX 		            = currentPos.x
 
-                                if ( birthUnitCoalition == 1 and PWS.saveBirthRed == true or birthUnitCoalition == 2 and PWS.saveBirthBlue == true) then
-                                    if birthUnitObjectCategory == 1 and birthUnitCategory == 2 then -- UNIT
-                                        _match = 0
-                                        for i=1, #PWS.escapeNameFromBirthList do
-                                            if string.match(birthUnitName, PWS.escapeNameFromBirthList[i]) then _match = _match + 1 end
+                            if ( birthUnitCoalition == 1 and PWS.saveBirthRed == true or birthUnitCoalition == 2 and PWS.saveBirthBlue == true) then
+                                if birthUnitObjectCategory == 1 and birthUnitCategory == 2 then -- UNIT
+                                    _match = 0
+                                    for i=1, #PWS.escapeNameFromBirthList do
+                                        if string.match(birthUnitName, PWS.escapeNameFromBirthList[i]) then _match = _match + 1 end
+                                    end
+                                    if _match ~= 0 then  
+                                        env.info("Persistent World | Birth Unit ignored")
+                                    else
+                                        _groupMatch = 0
+                                        for i = 1, #PWS_Spawned do
+                                            if PWS_Spawned[i].unitGroupName == BirthGroupName then
+                                                _groupMatch = _groupMatch+1
+                                                PWS_Spawned[i].units[#PWS_Spawned[i].units+1] = {
+                                                    unitType = birthUnitType,
+                                                    unitName = birthUnitName,
+                                                    posY = birthUnitPosY,
+                                                    posX = birthUnitPosX,
+                                                }
+                                            end
                                         end
-                                        if _match ~= 0 then  
-                                            env.info("Persistent World | Birth Unit ignored")
-                                        else
-                                            _groupMatch = 0
-                                            for i = 1, #PWS_Spawned do
-                                                if PWS_Spawned[i].unitGroupName == BirthGroupName then
-                                                    _groupMatch = _groupMatch+1
-                                                    PWS_Spawned[i].units[#PWS_Spawned[i].units+1] = {
+                                        if _groupMatch == 0 then
+                                            PWS_Spawned[#PWS_Spawned+1] = {
+                                                unitCoalition = birthUnitCoalition,
+                                                unitObjectCategory = birthUnitObjectCategory,
+                                                unitCategory = birthUnitCategory,
+                                                unitGroupName = BirthGroupName,
+                                                units = {
+                                                    [1] = {
                                                         unitType = birthUnitType,
                                                         unitName = birthUnitName,
                                                         posY = birthUnitPosY,
                                                         posX = birthUnitPosX,
-                                                    }
-                                                end
-                                            end
-                                            if _groupMatch == 0 then
-                                                PWS_Spawned[#PWS_Spawned+1] = {
-                                                    unitCoalition = birthUnitCoalition,
-                                                    unitObjectCategory = birthUnitObjectCategory,
-                                                    unitCategory = birthUnitCategory,
-                                                    unitGroupName = BirthGroupName,
-                                                    units = {
-                                                        [1] = {
-                                                            unitType = birthUnitType,
-                                                            unitName = birthUnitName,
-                                                            posY = birthUnitPosY,
-                                                            posX = birthUnitPosX,
-                                                        },
-                                                    }
+                                                    },
                                                 }
-                                            end
-                                            PWS.escapeTypeFromDeadList[#PWS.escapeTypeFromDeadList+1] = birthUnitName
+                                            }
                                         end
-                                    -- elseif ( birthUnitObjectCategory == 3 ) then 									-- STATIC
-                                    -- 	SpawnedTableLength = SpawnedTableLength + 1			
-                                    -- 	PWS_Spawned[SpawnedTableLength] = birthUnitName												
-                                    else
-                                    end
+                                        PWS.escapeTypeFromDeadList[#PWS.escapeTypeFromDeadList+1] = birthUnitName
+                                    end											
                                 else
                                 end
                             else
