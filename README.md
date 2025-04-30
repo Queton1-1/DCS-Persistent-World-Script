@@ -13,7 +13,7 @@ Basé sur les travaux des excellents Pikey et Surrexen mais énormément de refo
 /!\ Rien n'est jamais parfait, ce script évoluera au fil des idées d'améliorations, des bugs éventuels à corriger et surtout du temps que je peux y consacrer.  
 
 **Installation**  
-Il suffit de créer un trigger avec pour condition 'temps sup. à' (1) et charger le script .lua contenu dans le .zip  
+Il suffit de créer un trigger avec pour condition 'temps sup. à' (1) et charger le script .lua contenu dans le .zip (Ou plus de temps si génération d'unités pour prise en compte)  
 Ne nécessite aucune dépendance (Moose, Mist, etc...) et ne gène pas leur fonctionnement.  
 
 Nécessite que votre fichier 'MissionScripting.lua' dans votre dossier '[...]\DCS World\Scripts' soit 'de-sanitize' car le script fait appel à des fonctions basique de la lib 'os'.  
@@ -31,14 +31,17 @@ en ajoutant -- devant comme suit :
     --sanitizeModule('io' ),  
     --sanitizeModule('lfs' ),  
 
-Pour chaque utilisation du script, pensez à régler le temps entre chaque save (300s par défaut) et le nom du fichier de sauvegarde.  
-Ces paramètres se trouvent dans le script, éditable avec n'importe quel éditeur texte (bloc note, notepad++, visual studio code)  
+Pour chaque utilisation du script, vérifier qu'un nom de mission est présent dans le panneau Briefing de l'éditeur de mission.  
+  
+Le temps entre chaque save (600s par défaut) et ce paramètre se trouve dans le script, éditable avec n'importe quel éditeur texte (bloc note, notepad++, visual studio code) 
+Le dossier par défaut pour les saves est \Saved Games\DCS.Saves
 
 **Utilisation**  
 Rien de plus simple.  
 Si le script est bien chargé, c'est automatique et des messages s'afficheront à chaque sauvegarde.  
-Les fichiers de sauvegardes se situerons dans le dossier d'installation de DCS (/Program File/...) >>(versions antérieures à v2.09)  
-Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS/Missions/_PWS_Saves) >>(à partir de v2.09)  
+Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS.Saves) >>(à partir de v2.15)  
+Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS/Missions/_PWS_Saves) >>(versions antérieures à v2.15)  
+
 
   
   
@@ -71,13 +74,12 @@ just add -- like below :
     --sanitizeModule('io' ),  
     --sanitizeModule('lfs' ),  
 
-Dont forget to set few parameters in the top of the script for every use. (Time between saves & filename prefix)  
-
 **Use**  
 Easy!  
 If well done un mission editor, messages will be displayed.  
-Saves file will be created in DCS application folder (/Program Files/...) >>(before v2.09)  
-Saves file will be created in DCS application folder (/Saved Games/DCS/Missions/_PWS_Saves) >>(after v2.09)  
+Saves file will be created in DCS application folder (/Saved Games/DCS.Saves) >>(after v2.15)  
+Saves file will be created in DCS application folder (/Saved Games/DCS/Missions/_PWS_Saves) >>(before v2.15)  
+
 Enjoy!  
   
 o7  
