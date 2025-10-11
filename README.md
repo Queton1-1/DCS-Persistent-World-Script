@@ -9,10 +9,12 @@ Les groupes, unités & marks spawnés pendant la partie peuvent être sauvés.
 Basé sur les travaux des excellents Pikey et Surrexen mais énormément de refonte et beaucoup d'ajout.  
 
 
-**Mises à jour / Updates**  
+**Mises à jour / Updates**
+--  
 /!\ Rien n'est jamais parfait, ce script évoluera au fil des idées d'améliorations, des bugs éventuels à corriger et surtout du temps que je peux y consacrer.  
 
 **Installation**  
+--  
 Il suffit de créer un trigger avec pour condition 'temps sup. à' (1) et charger le script .lua contenu dans le .zip (Ou plus de temps si génération d'unités pour prise en compte)  
 Ne nécessite aucune dépendance (Moose, Mist, etc...) et ne gène pas leur fonctionnement.  
 
@@ -37,6 +39,7 @@ Le temps entre chaque save (600s par défaut) et ce paramètre se trouve dans le
 Le dossier par défaut pour les saves est \Saved Games\DCS.Saves
 
 **Utilisation**  
+--  
 Rien de plus simple.  
 Si le script est bien chargé, c'est automatique et des messages s'afficheront à chaque sauvegarde.  
 Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS.Saves) >>(à partir de v2.15)  
@@ -53,6 +56,7 @@ During game, spawned units can be saved.
 Based on the awesome Pikey and Surrexen works but with lots of rebuilds et adds.  
 
 **Updates**  
+
 /!\ Nothing's perfect, but if you track bugs and share it, i will do my best to update the script. I'm not professionnal and like most of us, i have to share my time between familly and work also.  
 
 **Installation**  
