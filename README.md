@@ -2,7 +2,7 @@
 
 Pour télécharger le script, rdv à la page [Releases](https://github.com/Queton1-1/DCS-Persistent-World-Script/releases)
 
-= FR =  
+# = FR =  
 Script pour sauvegarder la progression en mission si implémenté.  
 Les unitées sol, statiques et navires (hors portes-avions) détruits seront listés et retirés au prochain lancement.  
 Les groupes, unités & marks spawnés pendant la partie peuvent être sauvés.  
@@ -49,17 +49,18 @@ Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved
   
   
   
-= EN =  
+# = EN =  
 Script to save mission progression.  
 All ground units, statics and boats (not carriers) destroyed will be list and destroy on next load.  
 During game, spawned units can be saved.  
 Based on the awesome Pikey and Surrexen works but with lots of rebuilds et adds.  
 
 **Updates**  
-
+--  
 /!\ Nothing's perfect, but if you track bugs and share it, i will do my best to update the script. I'm not professionnal and like most of us, i have to share my time between familly and work also.  
 
 **Installation**  
+--  
 Just create a trigger with condition time more' (1 or many seconds) and load the script .lua from .zip  
 Mist or Moose libs not needed.  
 
@@ -79,6 +80,7 @@ just add -- like below :
     --sanitizeModule('lfs' ),  
 
 **Use**  
+--  
 Easy!  
 If well done un mission editor, messages will be displayed.  
 Saves file will be created in DCS application folder (/Saved Games/DCS.Saves) >>(after v2.15)  
