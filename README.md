@@ -1,4 +1,5 @@
 # DCS-Persistent-World-Script
+[Update 2025-04]
 
 Pour télécharger le script, rdv à la page [Releases](https://github.com/Queton1-1/DCS-Persistent-World-Script/releases)
 
