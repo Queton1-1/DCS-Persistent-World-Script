@@ -1,5 +1,5 @@
 # DCS-Persistent-World-Script
-[Update 2025-04]
+[Update 2026-02]
 
 Téléchargement / Download  
 -- 
@@ -19,7 +19,7 @@ Basé sur les travaux des excellents Pikey et Surrexen mais énormément de refo
 **Installation**  
 --  
 Il suffit de créer un trigger avec pour condition 'temps sup. à' (1) et charger le script .lua contenu dans le .zip (Ou plus de temps si génération d'unités pour prise en compte)  
-Ne nécessite aucune dépendance (Moose, Mist, etc...) et ne gène pas leur fonctionnement.  
+Ne nécessite aucunes dépendances (Moose, Mist, etc...) et ne gène pas leur fonctionnement.  
 
 Nécessite que votre fichier 'MissionScripting.lua' dans votre dossier '[...]\DCS World\Scripts' soit 'de-sanitize' car le script fait appel à des fonctions basique de la lib 'os'.  
 (Et à répeter après chaque mise à jour.)  
@@ -45,8 +45,7 @@ Le dossier par défaut pour les saves est \Saved Games\DCS.Saves
 --  
 Rien de plus simple.  
 Si le script est bien chargé, c'est automatique et des messages s'afficheront à chaque sauvegarde.  
-Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS.Saves) >>(à partir de v2.15)  
-Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS/Missions/_PWS_Saves) >>(versions antérieures à v2.15)  
+Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS.Persistence) >>(à partir de v2.16)  
 
 
   
@@ -86,8 +85,7 @@ just add -- like below :
 --  
 Easy!  
 If well done un mission editor, messages will be displayed.  
-Saves file will be created in DCS application folder (/Saved Games/DCS.Saves) >>(after v2.15)  
-Saves file will be created in DCS application folder (/Saved Games/DCS/Missions/_PWS_Saves) >>(before v2.15)  
+Saves file will be created in DCS application folder (/Saved Games/DCS.Persistence) >>(after v2.16)  
 
 Enjoy!  
   
