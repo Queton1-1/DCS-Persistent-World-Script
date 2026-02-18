@@ -7,6 +7,14 @@
 
 
 --[[%%%%% CHANGELOG %%%%%
+    2.16c
+    - refactor des fonctions Load / Save / event et des variables statiques
+    - Ajout de commandes via les marks
+    - Ajout de OPs, sauvegarde de la variable tableau PWS_ops
+    - Ajout de Datas, sauvegarde de la variable tableau PWS_datas
+    - Ajout de la sauvegarde des Flags, chargement via Marks, sauvegarde auto
+    - Ajout outils NearestAirbase(), GetDistPoints(), GetDistObjects(), SaveObjectsMaps()
+    
     2.16a 08/02/2026
     - Gros dépoussiérage du code, tri et renommage de variables, refactor de fonctions etc...
     - correction saveFileName="MISSION_UNKNOWN"
@@ -14,6 +22,7 @@
     - ajout gestion évenementiel des Marks
     - ajout gestion des warehouses
     - suppr. des changelogs antérieurs à 2.14b
+    - Nouvel emplacement de savegarde par défaut : `\Saved Games\DCS.Persistence\` pour convenir au serveurs multi-instances.
 
     2.15b
     - correction du check de coalition dans SpawnMe()
@@ -25,9 +34,9 @@
 
     2.14b
         26/04/2025
-        - ajout namePatternList
+        - ajout NAMES_PATTERN_LIST
         - correction spawn unit 1 > 01
-        - ajout option debugSaveSchedule
+        - ajout option DEBUG_SAVE_SCHEDULE
 
         29/03/2025
         - Ajout spawn farp et refill
@@ -35,47 +44,63 @@
 
 
 --[[%%%%% TODO - NEXT FEATURES %%%%%
-    Pas d'idée pour l'instant
+    ...
 --]]
 
 
 --%%%%% PARAMS %%%%%
     --> Temps entre deux sauvegardes (sec)
     --> Time between saves (in sec), default 15 minutes
-    local userSaveSchedule = 900
+    local USER_SAVE_SCHEDULE = 900
 
     --> /!\ Préfixe de la sauvegarde - à régler pour chaque mission
     --> Save file prefix - each mission needs a different setting
-    local useCustomSaveFileName = false
-    local saveFileName = "Plop"
+    local USE_CUSTOM_SAVE_FILENAME = false
+    local SAVE_FILENAME = "Plop"
 
     --> Activer sauvegarde unités detruites Bleu (true/false)
     --> If set to true, save blue coalition also.
-    local saveDeadBlue = true
-    local saveDeadRed = true
+    local SAVE_DEAD_BLUE = true
+    local SAVE_DEAD_RED = true
 
     --> Activer sauvegarde unités spawnées Bleu/rouge (true/false)
     --> If set to true, save blue coalition also.
-    local saveBirthBlue = true
-    local saveBirthRed = true
+    local SAVE_BIRTH_BLUE = true
+    local SAVE_BIRTH_RED = true
 
     --> Activer sauvegarde unités statiques spawnées Bleu/rouge (true/false)
     --> If set to true, save blue coalition also.
-    local saveStaticsBirthBlue = true
-    local saveStaticsBirthRed = true
+    local SAVE_STATICS_BIRTH_BLUE = true
+    local SAVE_STATICS_BIRTH_RED = true
 
     --> Activer sauvegarde des Marks (true/false)
     --> If set to true, save Marks also.
-    local saveMarksBlue = true
-    local saveMarksRed = true
+    local SAVE_MARKS_BLUE = true
+    local SAVE_MARKS_RED = true
 
     --> Activer sauvegarde des WareHouses (true/false)
     --> If set to true, save WH also.
-    local saveWarehouses = true
+    local SAVE_WAREHOUSES = true
+
+    --> Activer sauvegarde des Flags (true/false)
+    --> If set to true, save Flags.
+    local SAVE_FLAG = true
+
+    --> Activer sauvegarde du contenu de la variable tableau PWS_OPS (true/false)
+    --> If set to true, save table PWS_OPS.
+    local SAVE_OPS = true
+
+    --> Activer sauvegarde du contenu de la variable tableau PWS_DATA (true/false)
+    --> If set to true, save table PWS_DATA.
+    local SAVE_DATAS = true
+
+    --> Si vrai, les données ne seront sauvegardés opu chargées qu'en ligne de commandes.
+    --> If true, only commands lines will load or save datas
+    local USE_MANUAL_SAVE_AND_LOAD=false
 
     --> Liste de nom à exclure de la save
     --> Names or prefix to escape save
-    local ignoredNamesToDeadList = {
+    local IGNORED_NAMES_TO_DEAD_LIST = {
         "Wounded Pilot",
         "TTGT",
         "ttgt",
@@ -83,7 +108,7 @@
         "Procedural",
         "CTLD",
     }
-    local ignoredTypesToDeadList = {
+    local IGNORED_TYPES_TO_DEAD_LIST = {
         "Forrestal",
         "CVN",
         "Stennis",
@@ -93,7 +118,7 @@
         "hms_invincible",
         "ara_vdm",
     }
-    local ignoredNamesToUnitBirthList = {
+    local IGNORED_NAMES_TO_UNITS_BIRTH_LIST = {
         "Wounded Pilot",
         "TTGT",
         "ttgt",
@@ -102,11 +127,11 @@
         --"SOM",
         --"som",
     }
-    local ignoredTextsToMarkList = {
+    local IGNORED_TEXTS_TO_MARKS_LIST = {
         "SOM",
         "som",
     }
-    local savedTypesToStaticBirthList = {
+    local SAVED_TYPES_TO_STATICS_BIRTH_LIST = {
         ["Invisible FARP"] = "Heliports",
         ["FARP_SINGLE_01"] = "Heliports",
         ["FARP"] = "Heliports",
@@ -129,7 +154,7 @@
         ["Warehouse"]="Structures",
         ["Ski Ramp"]="Structures",
     }
-    local staticTypesAndShape ={
+    local STATIC_TYPES_AND_SHAPES ={
         ["Invisible FARP"] = "invisiblefarp",
         ["FARP_SINGLE_01"] = "FARP_SINGLE_01",
         ["FARP"] = "FARPS",
@@ -153,10 +178,10 @@
         ["Ski Ramp"]="SkiRamp_01",
     }
     --> Pattern dans les noms
-    local useNamePattern = false
-    local namePatternList={"CTLD",}
+    local USE_NAME_PATTERN = false
+    local NAMES_PATTERN_LIST={"CTLD",}
     --> CallSigns
-    local callsignTable={
+    local CALLSIGNS_TABLE={
         jtac={
             "Axeman",	
             "Darknight",
@@ -221,26 +246,29 @@
     }
     --> DEBUG Mode
     local DEBUG_MODE = false
-    local debugSaveSchedule = 30
+    local DEBUG_SAVE_SCHEDULE = 30
     --> Misc
-    local saveSchedule = userSaveSchedule
-    local defaultSaveFileName="UNKNOWN_MISSION"
+    local SAVE_SCHEDULE = USER_SAVE_SCHEDULE or 900
 
---%%%%% VARIABLES %%%%%
-    PWS = {}
-    PWS_deadUnitsTable = {}
-    PWS_deadStaticsTable = {}
-    PWS_spawnedUnitsTable = {}
-    PWS_spawnedStaticsTable = {}
-    PWS_marksTable = {}
-    PWS_warehousesTable = {}
+    --> Globals tables
+    PWS_event={}
+    PWS_deadUnits={}
+    PWS_deadStatics={}
+    PWS_spawnedUnits={}
+    PWS_spawnedStatics={}
+    PWS_marks={}
+    PWS_warehouses={}
+    PWS_flags={}
+    PWS_ops={}
+    PWS_datas={}
 
+    --> LUA standards
     local MathRan = math.random
     local WriteDir = lfs.writedir
     local MkDir = lfs.mkdir
     local Attributes = lfs.attributes
     local OpenFile = io.open
-    local Msg=trigger.action.outText
+    local OutText=trigger.action.outText
     local Log = env.info
     local StrMatch = string.match
     local StrSub = string.sub
@@ -254,36 +282,47 @@
     local ToNumber=tonumber
     local GetTime=timer.getTime
     
-    if useCustomSaveFileName==false and env.mission then
+    if USE_CUSTOM_SAVE_FILENAME==false and env.mission then
         local mizName = env.getValueDictByKey(env.mission.sortie)
         mizName = StrSub(mizName:gsub('[^%w._-]', ''), 1,10)
         if mizName~="" then
-            saveFileName=mizName
-        else
-            saveFileName=defaultSaveFileName
+            SAVE_FILENAME=mizName
         end
-    else
-        saveFileName=defaultSaveFileName
     end
     --> Dossier de sauvegarde (défaut : \Saved Games\DCS.PWS_saves)
     --> Save folder location
-    local saveDir = WriteDir().."..\\DCS.Persistence\\"
-    local deadUnitsSaveFile = saveDir..saveFileName.."_PWS_dead_units.lua"
-    local deadStaticsSaveFile = saveDir..saveFileName.."_PWS_dead_statics.lua"
-    local spawnedUnitsSaveFile = saveDir..saveFileName.."_PWS_spawned_units.lua"
-    local spawnedStaticsSaveFile = saveDir..saveFileName.."_PWS_spawned_statics.lua"
-    local marksSaveFile = saveDir..saveFileName.."_PWS_marks.lua"
-    local warehousesSaveFile = saveDir..saveFileName.."_PWS_warehouses.lua"
+    local SAVE_DIR = WriteDir().."..\\DCS.Persistence\\"
+    local DEAD_UNITS_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_dead_units.lua"
+    local DEAD_STATICS_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_dead_statics.lua"
+    local SPAWNED_UNITS_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_spawned_units.lua"
+    local SPAWNED_STATICS_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_spawned_statics.lua"
+    local MARKS_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_marks.lua"
+    local WAREHOUSES_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_warehouses.lua"
+    local FLAGS_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_flags.lua"
+    local OPS_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_ops.lua"
+    local DATAS_FILE = SAVE_DIR..SAVE_FILENAME.."_PWS_datas.lua"
+
+    --> Cartographie des objects dans DCS
+    local OBJECTS_MAP=Warehouse.getResourceMap()
+    local AIRBASES_MAP={}
+    for i=1, #world.getAirbases() do
+        AIRBASES_MAP[#AIRBASES_MAP+1] = world.getAirbases()[i]:getName()
+    end
 
 --%%%%% TOOLKIT FUNCTIONS %%%%%
+    local function Round(number, digit_position) 
+        local precision = 10^digit_position
+        number = number + (precision / 2)
+        return math.floor(number / precision) * precision
+    end
     local function DebugLog(msg)
         if DEBUG_MODE == true then
             Log("Persistent World | "..msg)
-            Msg("Persistent World | "..msg,120)
+            OutText("Persistent World | "..msg,120)
         end
     end
     local function ClearMsg()
-        Msg("",1,true)
+        OutText("",1,true)
     end
     local function BasicSerialize(data)
         if data == nil then
@@ -342,6 +381,70 @@
         local saveFile = OpenFile(file, "w")
         saveFile:write(data)
         saveFile:close()
+    end
+    local function ResetSavefiles()
+        if os ~= nil then
+            t={DEAD_UNITS_FILE,DEAD_STATICS_FILE,SPAWNED_UNITS_FILE,SPAWNED_STATICS_FILE,MARKS_FILE,WAREHOUSES_FILE}
+            for i=1, #t do
+                result, message = os.remove(t[i])
+                if result then
+                    Log("Persistent World | Reset saved datas...")
+                    OutText("Persistent World | Reset saved datas...",2)
+                else
+                    log("Persistent World | Datas reset failed : ", message)
+                    OutText("Persistent World | Datas reset failed : ", message,2)
+                end
+            end
+        end
+    end
+    local function SaveObjectsMaps()
+        local AIRCRAFT_MAP={}
+        local VEHICULES_MAP={}
+        local SHIPS_MAP={}
+        local WEAPON_MAP={}
+        for k,v in pairs(Warehouse.getResourceMap()) do
+            if v[1]==1 then AIRCRAFT_MAP[k]={v[2],v[3],v[4]}
+            elseif v[1]==2 then VEHICULES_MAP[k]={v[2],v[3],v[4]}
+            elseif v[1]==3 then SHIPS_MAP[k]={v[2],v[3],v[4]}
+            elseif v[1]==4 then WEAPON_MAP[k]={v[2],v[3],v[4]}
+            end
+        end
+        WriteDatas(SmartSerialize("AIRBASES_MAP", AIRBASES_MAP), SAVE_DIR..SAVE_FILENAME.."_PWS_airbases_map.lua")
+        WriteDatas(SmartSerialize("OBJECTS_MAP", OBJECTS_MAP), SAVE_DIR..SAVE_FILENAME.."_PWS_objects_map.lua")
+        WriteDatas(SmartSerialize("AIRCRAFT_MAP", AIRCRAFT_MAP), SAVE_DIR..SAVE_FILENAME.."_PWS_aircrafts_map.lua")
+        WriteDatas(SmartSerialize("VEHICULES_MAP", VEHICULES_MAP), SAVE_DIR..SAVE_FILENAME.."_PWS_vehicles_map.lua")
+        WriteDatas(SmartSerialize("SHIPS_MAP", SHIPS_MAP), SAVE_DIR..SAVE_FILENAME.."_PWS_ships_map.lua")
+        WriteDatas(SmartSerialize("WEAPON_MAP", WEAPON_MAP), SAVE_DIR..SAVE_FILENAME.."_PWS_weapons_map.lua")
+        Log("Persistent World | Writing DCS Objets map...")
+        OutText("Persistent World | Writing DCS Objets map...",2)
+    end
+    local function GetDistObjects(obj1, obj2)
+        local p1 = obj1:getPosition().p
+        local p2 = obj2:getPosition().p
+        return math.sqrt((p1.x - p2.x)^2 + (p1.z - p2.z)^2)
+    end
+    local function GetDistPoints(p1, p2)
+        if p1.x and p1.z and p2.x and p2.z then
+            return math.sqrt((p1.x - p2.x)^2 + (p1.z - p2.z)^2)
+        end
+    end
+    local function KmToNm(val)
+        if val and type(val)=='number' then return val/1.852 end
+    end
+    function NearestAirbase(coord)
+        if coord.x and coord.z then -- x North-South, y Top, z East-West
+            local airbase={}
+            local lowestDist
+            for i=1, #world.getAirbases() do
+                local dist=(GetDistPoints(coord, world.getAirbases()[i]:getPosition().p))/1000
+                if lowestDist==nil or dist<=lowestDist then
+                    lowestDist=dist
+                    airbase=world.getAirbases()[i]:getName()
+                end
+            end
+            OutText("Nearest base : "..airbase.." ("..Round(KmToNm(lowestDist),-2).." Nm)",10)
+            return airbase
+        end
     end
     --%%% SPAWNER 2.0 %%%
         --- SpawnMe : spawn units, ships, airplanes, or statics from passed data table
@@ -456,7 +559,7 @@
                 "SpitfireLFMkIXCW",
                 "TF-51D",
         }
-        local callsignTable={
+        local CALLSIGNS_TABLE={
             jtac={
                 "Axeman",	
                 "Darknight",
@@ -8567,7 +8670,7 @@
                     ["heading"]=data.units[1].heading or _heading*math.pi/180,
                     ["heliport_frequency"] = _freq or 225100000,
                     ["heliport_modulation"] = 0,
-                    ["heliport_callsign_id"] = callsignTable.farp[math.random(0,10)],
+                    ["heliport_callsign_id"] = CALLSIGNS_TABLE.farp[math.random(0,10)],
                 }
                 local newFarp=coalition.addStaticObject(_coalition, _data)
                 Log("Persistent World | new FARP spawned")
@@ -8591,123 +8694,125 @@
             return _groupName
         end
     end
+    --%%% SAVE FUNCTIONS %%%
     local function SaveDeadUnits()
-        local datas = SmartSerialize("PWS_deadUnitsTable", PWS_deadUnitsTable)
-        WriteDatas(datas, deadUnitsSaveFile)
-        Msg("Persistent World | Progress Has Been Saved", 2)
-        Log("Persistent World | Dead units Saved ("..#PWS_deadUnitsTable..")")
+        local datas = SmartSerialize("PWS_deadUnits", PWS_deadUnits)
+        WriteDatas(datas, DEAD_UNITS_FILE)
+        Log("Persistent World | Saving dead unit(s)... ["..#PWS_deadUnits.."]")
+        OutText("Persistent World | Saving dead unit(s)... ["..#PWS_deadUnits.."]",2)
     end
     local function SaveDeadStatics()
-        local datas = SmartSerialize("PWS_deadStaticsTable", PWS_deadStaticsTable)
-        WriteDatas(datas, deadStaticsSaveFile)
-        Log("Persistent World | Dead statics Saved ("..#PWS_deadStaticsTable..")")
+        local datas = SmartSerialize("PWS_deadStatics", PWS_deadStatics)
+        WriteDatas(datas, DEAD_STATICS_FILE)
+        Log("Persistent World | Saving dead static(s)... ["..#PWS_deadStatics.."]")
+        OutText("Persistent World | Saving dead static(s)... ["..#PWS_deadStatics.."]",2)
     end
     local function SaveSpawnedUnits()
-        if saveBirthBlue == true or saveBirthRed == true then
+        if SAVE_BIRTH_BLUE == true or SAVE_BIRTH_RED == true then
             local datas = {}
-            for i = 1, #PWS_spawnedUnitsTable do
-                if PWS_spawnedUnitsTable[i].coalition
-                and PWS_spawnedUnitsTable[i].objectCategory
-                and PWS_spawnedUnitsTable[i].objectSubCategory
-                and PWS_spawnedUnitsTable[i].groupName
-                and PWS_spawnedUnitsTable[i].units
+            for i = 1, #PWS_spawnedUnits do
+                if PWS_spawnedUnits[i].coalition
+                and PWS_spawnedUnits[i].objectCategory
+                and PWS_spawnedUnits[i].objectSubCategory
+                and PWS_spawnedUnits[i].groupName
+                and PWS_spawnedUnits[i].units
                 then
                     local tempUnitsDatas = {}
                     local aliveUnits = 0
-                    for i2=1, #PWS_spawnedUnitsTable[i].units do  
-                        local thisUnit = Unit.getByName(PWS_spawnedUnitsTable[i].units[i2].name)
+                    for i2=1, #PWS_spawnedUnits[i].units do  
+                        local thisUnit = Unit.getByName(PWS_spawnedUnits[i].units[i2].name)
                         if thisUnit and thisUnit:getLife() >= 1 then
                             aliveUnits = aliveUnits+1
                             local thisUnitPosition = thisUnit:getPoint()
                             local thisUnitHeading = math.atan2(thisUnit:getPosition().x.z, thisUnit:getPosition().x.x)
 
                             tempUnitsDatas[#tempUnitsDatas+1] = {
-                                type = PWS_spawnedUnitsTable[i].units[i2].type,
-                                name = PWS_spawnedUnitsTable[i].units[i2].name,
+                                type = PWS_spawnedUnits[i].units[i2].type,
+                                name = PWS_spawnedUnits[i].units[i2].name,
                                 y = thisUnitPosition.z,
                                 x = thisUnitPosition.x,
                                 heading = thisUnitHeading,
                             }
                         else
-                            DebugLog("Update Spawned : L'unité "..PWS_spawnedUnitsTable[i].units[i2].name.." n'existe plus")
+                            DebugLog("Update Spawned : L'unité "..PWS_spawnedUnits[i].units[i2].name.." n'existe plus")
                         end
                     end
                     if aliveUnits > 0 then
                         datas[#datas+1] = {}
-                        datas[#datas].coalition = PWS_spawnedUnitsTable[i].coalition
-                        datas[#datas].objectCategory = PWS_spawnedUnitsTable[i].objectCategory
-                        datas[#datas].objectSubCategory = PWS_spawnedUnitsTable[i].objectSubCategory
-                        datas[#datas].groupName = PWS_spawnedUnitsTable[i].groupName
+                        datas[#datas].coalition = PWS_spawnedUnits[i].coalition
+                        datas[#datas].objectCategory = PWS_spawnedUnits[i].objectCategory
+                        datas[#datas].objectSubCategory = PWS_spawnedUnits[i].objectSubCategory
+                        datas[#datas].groupName = PWS_spawnedUnits[i].groupName
                         datas[#datas].units = tempUnitsDatas
                     else
-                        DebugLog("Update Spawned : L'unité "..PWS_spawnedUnitsTable[i].groupName.." n'existe plus")
+                        DebugLog("Update Spawned : L'unité "..PWS_spawnedUnits[i].groupName.." n'existe plus")
                     end -- group alive
                 else
                     DebugLog("Update Spawned : 1 loop skipped, a nil value ")
                 end -- group exist
             end
-            PWS_spawnedUnitsTable = datas
-            DebugLog("Update Spawned complete ("..#PWS_spawnedUnitsTable.. ")")
-            local serializedDatas = SmartSerialize("PWS_spawnedUnitsTable", PWS_spawnedUnitsTable)
-            WriteDatas(serializedDatas, spawnedUnitsSaveFile)
-            Log("Persistent World | Spawned units Saved ("..#PWS_spawnedUnitsTable..")")
+            PWS_spawnedUnits = datas
+            local serializedDatas = SmartSerialize("PWS_spawnedUnits", PWS_spawnedUnits)
+            WriteDatas(serializedDatas, SPAWNED_UNITS_FILE)
+            Log("Persistent World | Saving spawned unit(s)... ["..#PWS_spawnedUnits.."]")
+            OutText("Persistent World | Saving spawned unit(s)... ["..#PWS_spawnedUnits.."]",2)
         end
     end
     local function SaveSpawnedStatics()
-        if saveStaticsBirthBlue == true or saveStaticsBirthRed == true then
+        if SAVE_STATICS_BIRTH_BLUE == true or SAVE_STATICS_BIRTH_RED == true then
             local datas = {}
-            for i = 1, #PWS_spawnedStaticsTable do
-                if PWS_spawnedStaticsTable[i].objectCategory
-                and PWS_spawnedStaticsTable[i].coalition
-                and PWS_spawnedStaticsTable[i].name
-                and PWS_spawnedStaticsTable[i].type
-                and PWS_spawnedStaticsTable[i].category
-                and PWS_spawnedStaticsTable[i].shape
-                and PWS_spawnedStaticsTable[i].x
-                and PWS_spawnedStaticsTable[i].y
+            for i = 1, #PWS_spawnedStatics do
+                if PWS_spawnedStatics[i].objectCategory
+                and PWS_spawnedStatics[i].coalition
+                and PWS_spawnedStatics[i].name
+                and PWS_spawnedStatics[i].type
+                and PWS_spawnedStatics[i].category
+                and PWS_spawnedStatics[i].shape
+                and PWS_spawnedStatics[i].x
+                and PWS_spawnedStatics[i].y
                 then
                     local alive = 0 
-                    local thisUnit = StaticObject.getByName(PWS_spawnedStaticsTable[i].name)
-                    DebugLog("Statics : "..PWS_spawnedStaticsTable[i].name)
+                    local thisUnit = StaticObject.getByName(PWS_spawnedStatics[i].name)
+                    DebugLog("Statics : "..PWS_spawnedStatics[i].name)
                     if thisUnit and thisUnit:getLife() >= 1 then
                         alive = alive+1
                     else
-                        DebugLog("Update spawned statics : L'unité "..PWS_spawnedStaticsTable[i].name.." n'existe plus")
+                        DebugLog("Update spawned statics : L'unité "..PWS_spawnedStatics[i].name.." n'existe plus")
                     end
                     if alive > 0 then
                         datas[#datas+1] = {}
-                        datas[#datas].objectCategory = PWS_spawnedStaticsTable[i].objectCategory
-                        datas[#datas].coalition = PWS_spawnedStaticsTable[i].coalition
-                        datas[#datas].name = PWS_spawnedStaticsTable[i].name
-                        datas[#datas].type = PWS_spawnedStaticsTable[i].type
-                        datas[#datas].category = PWS_spawnedStaticsTable[i].category
-                        datas[#datas].shape = PWS_spawnedStaticsTable[i].shape
-                        datas[#datas].x = PWS_spawnedStaticsTable[i].x
-                        datas[#datas].y = PWS_spawnedStaticsTable[i].y
-                        datas[#datas].heading = PWS_spawnedStaticsTable[i].heading
+                        datas[#datas].objectCategory = PWS_spawnedStatics[i].objectCategory
+                        datas[#datas].coalition = PWS_spawnedStatics[i].coalition
+                        datas[#datas].name = PWS_spawnedStatics[i].name
+                        datas[#datas].type = PWS_spawnedStatics[i].type
+                        datas[#datas].category = PWS_spawnedStatics[i].category
+                        datas[#datas].shape = PWS_spawnedStatics[i].shape
+                        datas[#datas].x = PWS_spawnedStatics[i].x
+                        datas[#datas].y = PWS_spawnedStatics[i].y
+                        datas[#datas].heading = PWS_spawnedStatics[i].heading
                     else
-                        DebugLog("Update spawned statics : L'unité "..PWS_spawnedStaticsTable[i].name.." n'existe plus")
+                        DebugLog("Update spawned statics : L'unité "..PWS_spawnedStatics[i].name.." n'existe plus")
                     end
                 else
                     DebugLog("Update spawned statics : 1 loop skipped, a nil value ")
                 end
             end
-            PWS_spawnedStaticsTable = datas
-            DebugLog("Update spawned statics complete ("..#PWS_spawnedStaticsTable.. ")")
-            local serializedDatas = SmartSerialize("PWS_spawnedStaticsTable", PWS_spawnedStaticsTable)
-            WriteDatas(serializedDatas, spawnedStaticsSaveFile)
-            Log("Persistent World | Spawned statics Saved ("..#PWS_spawnedStaticsTable..")")
+            PWS_spawnedStatics = datas
+            local serializedDatas = SmartSerialize("PWS_spawnedStatics", PWS_spawnedStatics)
+            WriteDatas(serializedDatas, SPAWNED_STATICS_FILE)
+            Log("Persistent World | Saving spawned static(s)... ["..#PWS_spawnedStatics.."]")
+            OutText("Persistent World | Saving spawned static(s)... ["..#PWS_spawnedStatics.."]",2)
         end
     end
     local function SaveMarks()
-        if saveMarksBlue == true or saveMarksRed ==true then
+        if SAVE_MARKS_BLUE == true or SAVE_MARKS_RED ==true then
             local datas = {}
             local marks = world.getMarkPanels()
             for i = 1, #marks do
                 if marks[i].text and marks[i].text ~= "" then
                     local match = 0
-                    for y=1, #ignoredTextsToMarkList do
-                        if StrMatch(marks[i].text, ignoredTextsToMarkList[y]) then match = match + 1 end
+                    for y=1, #IGNORED_TEXTS_TO_MARKS_LIST do
+                        if StrMatch(marks[i].text, IGNORED_TEXTS_TO_MARKS_LIST[y]) then match = match + 1 end
                     end
                     if match ~= 0 then
                         DebugLog("Mark ignored")
@@ -8720,25 +8825,86 @@
                     end
                 end
             end
-            PWS_marksTable = datas
-            DebugLog("Update Marks complete ("..#PWS_marksTable..")")
-            local datas = SmartSerialize("PWS_marksTable", PWS_marksTable)
-            WriteDatas(datas, marksSaveFile)
-            Log("Persistent World | Marks Saved ("..#PWS_marksTable..")")
+            PWS_marks = datas
+            local datas = SmartSerialize("PWS_marks", PWS_marks)
+            WriteDatas(datas, MARKS_FILE)
+            Log("Persistent World | Saving Mark(s)... ["..#PWS_marks.."]")
+            OutText("Persistent World | Saving Mark(s)... ["..#PWS_marks.."]",2)
         end
     end
     local function SaveWarehouses()
-        if saveWarehouses==true then
+        if SAVE_WAREHOUSES==true then
             local Airbases = world.getAirbases()
             for i=1, #(Airbases) do
                 local warehouse=Airbases[i]:getWarehouse()
-                local inv = warehouse:getInventory()
-                PWS_warehousesTable[Airbases[i]:getName()]=inv
+                local stock = warehouse:getInventory()
+                local unlimitedAircraft=true
+                local unlimitedWeapons=true
+                for k,v in pairs(stock.aircraft) do 
+                    if k then unlimitedAircraft=false end 
+                end
+                for k,v in pairs(stock.weapon) do 
+                    if k then unlimitedWeapons=false end 
+                end
+                if unlimitedAircraft==true then
+                elseif unlimitedWeapons==true then
+                else
+                    for item,val in pairs(OBJECTS_MAP) do
+                        if stock.aircraft[item]==nil and StrMatch(item,"weapons")==nil and val[1]==1 then stock.aircraft[item]=0
+                        elseif stock.weapon[item]==nil and StrMatch(item,"weapons")~=nil then stock.weapon[item]=0
+                        end
+                    end
+                end
+                if stock.liquids[0]==nil then stock.liquids[0]=0 end
+                if stock.liquids[1]==nil then stock.liquids[1]=0 end
+                if stock.liquids[2]==nil then stock.liquids[2]=0 end
+                if stock.liquids[3]==nil then stock.liquids[3]=0 end
+                PWS_warehouses[Airbases[i]:getName()]=stock
             end
-            DebugLog("Update Warehouses complete ("..#PWS_warehousesTable..")")
-            local datas = SmartSerialize("PWS_warehousesTable", PWS_warehousesTable)
-            WriteDatas(datas, warehousesSaveFile)
-            Log("Persistent World | Warehouses Saved ("..#PWS_warehousesTable..")")
+            local datas = SmartSerialize("PWS_warehouses", PWS_warehouses)
+            WriteDatas(datas, WAREHOUSES_FILE)
+            Log("Persistent World | Saving Warehouses...")
+            OutText("Persistent World | Saving Warehouses...",2)
+        end
+    end
+    local function SaveFlags()
+        -- env.missions.trigrules[1].actions[1]["predicate"] = "a_set_flag_value"
+        -- env.missions.trigrules[1].actions[1]["flag"] = "enableDoFile"
+        -- trigger.misc.getUserFlag(string flagNum/FlagName )
+        -- trigger.action.setUserFlag(string flagNum/FlagName , boolean/number userFlagValue )
+        local tempData={}
+        if SAVE_FLAG==true and env.mission.trigrules then
+            local nb=0
+            for i=1,#env.mission.trigrules do
+                for j=1,#env.mission.trigrules[i].actions do
+                    if env.mission.trigrules[i].actions[j].predicate=="a_set_flag_value" then
+                        local f=env.mission.trigrules[i].actions[j].flag
+                        tempData[f]=trigger.misc.getUserFlag(f)
+                        nb=nb+1
+                    end
+                end
+            end
+            PWS_flags=tempData
+            local datas = SmartSerialize("PWS_flags", PWS_flags)
+            WriteDatas(datas, FLAGS_FILE)
+            Log("Persistent World | Saving Flags... ("..nb..")")
+            OutText("Persistent World | Saving Flags... ("..nb..")",2)
+        end
+    end
+    local function SaveOps()
+        if SAVE_OPS==true then
+            local datas = SmartSerialize("PWS_ops", PWS_ops)
+            WriteDatas(datas, OPS_FILE)
+            Log("Persistent World | Saving OPs status...")
+            OutText("Persistent World | Saving OPs status...",2)
+        end
+    end
+    local function SaveDatas()
+        if SAVE_DATAS==true then
+            local datas = SmartSerialize("PWS_datas", PWS_datas)
+            WriteDatas(datas, DATAS_FILE)
+            Log("Persistent World | Saving datas...")
+            OutText("Persistent World | Saving datas...",2)
         end
     end
     local function SaveAll()
@@ -8748,104 +8914,94 @@
         ScheduleFunction(function () SaveSpawnedStatics() end, nil, GetTime()+4)
         ScheduleFunction(function () SaveMarks() end, nil, GetTime()+5)
         ScheduleFunction(function () SaveWarehouses() end, nil, GetTime()+6)
+        ScheduleFunction(function () SaveFlags() end, nil, GetTime()+7)
+        ScheduleFunction(function () SaveOps() end, nil, GetTime()+8)
+        ScheduleFunction(function () SaveDatas() end, nil, GetTime()+9)
     end
     local function ScheduledSaveAll()
-        ScheduleFunction(function () SaveDeadUnits() return GetTime()+saveSchedule end, nil, GetTime()+saveSchedule+1)
-        ScheduleFunction(function () SaveDeadStatics() return GetTime()+saveSchedule end, nil, GetTime()+saveSchedule+2)
-        ScheduleFunction(function () SaveSpawnedUnits() return GetTime()+saveSchedule end, nil, GetTime()+saveSchedule+3)
-        ScheduleFunction(function () SaveSpawnedStatics() return GetTime()+saveSchedule end, nil, GetTime()+saveSchedule+4)
-        ScheduleFunction(function () SaveMarks() return GetTime()+saveSchedule end, nil, GetTime()+saveSchedule+5)
-        ScheduleFunction(function () SaveWarehouses() return GetTime() + saveSchedule end, nil, GetTime()+saveSchedule+6)
+        ScheduleFunction(function () SaveDeadUnits() return GetTime()+SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+1)
+        ScheduleFunction(function () SaveDeadStatics() return GetTime()+SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+2)
+        ScheduleFunction(function () SaveSpawnedUnits() return GetTime()+SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+3)
+        ScheduleFunction(function () SaveSpawnedStatics() return GetTime()+SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+4)
+        ScheduleFunction(function () SaveMarks() return GetTime()+SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+5)
+        ScheduleFunction(function () SaveWarehouses() return GetTime() + SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+6)
+        ScheduleFunction(function () SaveFlags() return GetTime() + SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+7)
+        ScheduleFunction(function () SaveOps() return GetTime() + SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+8)
+        ScheduleFunction(function () SaveDatas() return GetTime() + SAVE_SCHEDULE end, nil, GetTime()+SAVE_SCHEDULE+9)
     end
---%%%%% MAIN () %%%%%
-    --> Counters
-    local deletedUnitsCounter = 0
-    local deletedStaticsCounter = 0
-    local restoredUnits = 0
-    local restoredStatics = 0
-    local restoredMarks = 0
-    --> Debug Mode
-    if DEBUG_MODE == true then
-        saveSchedule = debugSaveSchedule
-    end
-    --> Loading message
-    Msg("Persistent World | Loading...  -  Credits : JGi | Quéton 1-1", 5)
-    Log("Persistent World | Loading...  -  Credits : JGi | Quéton 1-1")
-    Log("Persistent World | Save folder : "..saveDir)
-    if os ~= nil then
-        --%%% IS SAVE DIR EXIST %%%
-        if IsDir(saveDir)==false then 
-            MkDir(saveDir)
-        end
-        --%%% LOAD DEAD STATICS %%%
-        if FileExists(deadStaticsSaveFile) then
-            Log("Persistent World | Found dead statics save file")	
-            dofile(deadStaticsSaveFile)
-            for i = 1, #PWS_deadStaticsTable do
-                if ( StaticObject.getByName(PWS_deadStaticsTable[i]) ~= nil ) then		
-                    StaticObject.getByName(PWS_deadStaticsTable[i]):destroy()		
-                    deletedStaticsCounter = deletedStaticsCounter + 1
-                elseif ( Unit.getByName(PWS_deadStaticsTable[i]) ~= nil ) then
-                    Unit.getByName(PWS_deadStaticsTable[i]):destroy()
-                    deletedUnitsCounter = deletedUnitsCounter + 1
+    --%%% LOAD FUNCTIONS %%%
+    local function LoadDeadUnits()
+        if FileExists(DEAD_UNITS_FILE) then
+            Log("Persistent World | Found dead units datas")	
+            dofile(DEAD_UNITS_FILE)
+            local removed=0
+            for i = 1, #PWS_deadUnits do	
+                if ( Unit.getByName(PWS_deadUnits[i]) ~= nil ) then
+                    Unit.getByName(PWS_deadUnits[i]):destroy()
+                    removed = removed + 1
                 else
-                    Log("Persistent World | Static "..i.." Is "..PWS_deadStaticsTable[i].." And Was Not Found", 2)
+                    Log("Unit "..i.." Is "..PWS_deadUnits[i].." And Was Not Found")
                 end	
             end
-            Log("Persistent World | Removed "..deletedStaticsCounter.." Static(s)", 5)
-        else
-            PWS_deadStaticsTable = {}
-            --StaticIntermentTableLength = 0	
-        end
-        --%%% LOAD DEAD UNITS %%%
-        if FileExists(deadUnitsSaveFile) then
-            Log("Persistent World | Found dead units save file")	
-            dofile(deadUnitsSaveFile)
-            for i = 1, #PWS_deadUnitsTable do	
-                if ( Unit.getByName(PWS_deadUnitsTable[i]) ~= nil ) then
-                    Unit.getByName(PWS_deadUnitsTable[i]):destroy()
-                    deletedUnitsCounter = deletedUnitsCounter + 1
-                else
-                    Log("Unit "..i.." Is "..PWS_deadUnitsTable[i].." And Was Not Found")
-                end	
-            end
-            Log("Persistent World | Removed "..deletedUnitsCounter.." Unit(s)")
+            Log("Persistent World | Removed "..removed.." Unit(s)")
+            OutText("Persistent World | Removed "..removed.." Unit(s)",5)
         else			
-            PWS_deadUnitsTable = {}	
-            Msg("Persistent World | No save found, creating new files...", 5)
-            Log("Persistent World | No save found, creating new files...")
+            PWS_deadUnits = {}	
+            OutText("Persistent World | No dead unit(s) datas", 5)
+            Log("Persistent World | No dead unit(s) datas")
         end
-        --%%% LOAD SPAWNED UNITS %%%
-        if saveBirthBlue == true or saveBirthRed == true then
-            if FileExists(spawnedUnitsSaveFile) then	
-                Log("Persistent World | Found spawned units save file")	
-                dofile(spawnedUnitsSaveFile)
-                restoredUnits = 0
-                if PWS_spawnedUnitsTable then   
-                    for i = 1, #PWS_spawnedUnitsTable do
-                        
-                        if PWS_spawnedUnitsTable[i]
-                        and PWS_spawnedUnitsTable[i].objectCategory
-                        and PWS_spawnedUnitsTable[i].objectSubCategory
-                        and PWS_spawnedUnitsTable[i].coalition
-                        and PWS_spawnedUnitsTable[i].groupName
-                        and PWS_spawnedUnitsTable[i].units
+    end
+    local function LoadDeadStatics()
+        if FileExists(DEAD_STATICS_FILE) then
+            Log("Persistent World | Found dead units datas")	
+            dofile(DEAD_STATICS_FILE)
+            local removed = 0
+            for i = 1, #PWS_deadUnits do	
+                if ( Unit.getByName(PWS_deadUnits[i]) ~= nil ) then
+                    Unit.getByName(PWS_deadUnits[i]):destroy()
+                    removed = removed + 1
+                else
+                    Log("Unit "..i.." Is "..PWS_deadUnits[i].." And Was Not Found")
+                end	
+            end
+            Log("Persistent World | Removed "..removed.." Static(s)")
+            OutText("Persistent World | Removed "..removed.." Static(s)",5)
+        else			
+            PWS_deadUnits = {}	
+            OutText("Persistent World | No dead static(s) datas", 5)
+            Log("Persistent World | No dead static(s) datas")
+        end
+    end
+    local function LoadSpawnedUnits()
+        if SAVE_BIRTH_BLUE == true or SAVE_BIRTH_RED == true then
+            if FileExists(SPAWNED_UNITS_FILE) then	
+                Log("Persistent World | Found spawned units datas")	
+                dofile(SPAWNED_UNITS_FILE)
+                local restored = 0
+                if PWS_spawnedUnits then   
+                    for i = 1, #PWS_spawnedUnits do
+                        if PWS_spawnedUnits[i]
+                        and PWS_spawnedUnits[i].objectCategory
+                        and PWS_spawnedUnits[i].objectSubCategory
+                        and PWS_spawnedUnits[i].coalition
+                        and PWS_spawnedUnits[i].groupName
+                        and PWS_spawnedUnits[i].units
                         then
                             local _data = {}
-                            if PWS_spawnedUnitsTable[i].coalition == 2 then _coalition = country.id.CJTF_BLUE else _coalition = country.id.CJTF_RED end
-                            if PWS_spawnedUnitsTable[i].objectCategory==1 and PWS_spawnedUnitsTable[i].objectSubCategory==2 then 
+                            if PWS_spawnedUnits[i].coalition == 2 then _coalition = country.id.CJTF_BLUE else _coalition = country.id.CJTF_RED end
+                            if PWS_spawnedUnits[i].objectCategory==1 and PWS_spawnedUnits[i].objectSubCategory==2 then 
                                 _data.objectCategory="UNIT"
                                 _data.objectSubCategory="GROUND_UNIT"
-                                _data.groupName = PWS_spawnedUnitsTable[i].groupName
-                                _data.x=PWS_spawnedUnitsTable[i].units[1].x
-                                _data.y=PWS_spawnedUnitsTable[i].units[1].y
+                                _data.groupName = PWS_spawnedUnits[i].groupName
+                                _data.x=PWS_spawnedUnits[i].units[1].x
+                                _data.y=PWS_spawnedUnits[i].units[1].y
                                 _data.units={}
-                                for y=1, #PWS_spawnedUnitsTable[i].units do
+                                for y=1, #PWS_spawnedUnits[i].units do
                                     _data.units[#_data.units+1]={
-                                        type=PWS_spawnedUnitsTable[i].units[y].type,
-                                        x = PWS_spawnedUnitsTable[i].units[y].x,
-                                        y = PWS_spawnedUnitsTable[i].units[y].y,
-                                        heading = PWS_spawnedUnitsTable[i].units[y].heading,
+                                        type=PWS_spawnedUnits[i].units[y].type,
+                                        x = PWS_spawnedUnits[i].units[y].x,
+                                        y = PWS_spawnedUnits[i].units[y].y,
+                                        heading = PWS_spawnedUnits[i].units[y].heading,
                                     }
                                 end
                                 _data.options={immortal=false, invisible=false, hidden=false, uncontrollable=false, datalink=true, roe="free", dispersion=300, alert="red", engage=100, hold=false, jtac=false, jtacCallname=nil, tacan=false}
@@ -8853,126 +9009,209 @@
                                 _data.skill="HIGH"
                                 SpawnMe(_data)
                             end
-                            restoredUnits = restoredUnits + 1
+                            restored = restored + 1
                         else
                             Log("Persistent World | Restoring unit : One loop skip, a nil value")
                         end	
                     end
-                    Log("Persistent World | Restored "..restoredUnits.." Unit(s)")
+                    Log("Persistent World | Restored "..restored.." Unit(s)")
+                    OutText("Persistent World | Restored "..restored.." Unit(s)",5)
                 end
             else
-                Log("Persistent World | No Spawned save file")			
+                Log("Persistent World | No Spawned units datas")
+                OutText("Persistent World | No Spawned units datas",5)
             end
         end
-        --%%% LOAD SPAWNED STATICS %%%
-        if saveStaticsBirthBlue == true or saveStaticsBirthRed == true then
-            if FileExists(spawnedStaticsSaveFile) then	
-                Log("Persistent World | Found spawned statics save file")	
-                dofile(spawnedStaticsSaveFile)
-                restoredStatics = 0
-                if PWS_spawnedStaticsTable then
-                    for i = 1, #PWS_spawnedStaticsTable do
-                        if PWS_spawnedStaticsTable[i]
-                        and PWS_spawnedStaticsTable[i].objectCategory
-                        and PWS_spawnedStaticsTable[i].coalition
-                        and PWS_spawnedStaticsTable[i].name
-                        and PWS_spawnedStaticsTable[i].type
-                        and PWS_spawnedStaticsTable[i].category
-                        and PWS_spawnedStaticsTable[i].shape
-                        and PWS_spawnedStaticsTable[i].x
-                        and PWS_spawnedStaticsTable[i].y
+    end
+    local function LoadSpawnedStatics()
+        if SAVE_STATICS_BIRTH_BLUE == true or SAVE_STATICS_BIRTH_RED == true then
+            if FileExists(SPAWNED_STATICS_FILE) then	
+                Log("Persistent World | Found spawned statics datas")	
+                dofile(SPAWNED_STATICS_FILE)
+                local restored = 0
+                if PWS_spawnedStatics then
+                    for i = 1, #PWS_spawnedStatics do
+                        if PWS_spawnedStatics[i]
+                        and PWS_spawnedStatics[i].objectCategory
+                        and PWS_spawnedStatics[i].coalition
+                        and PWS_spawnedStatics[i].name
+                        and PWS_spawnedStatics[i].type
+                        and PWS_spawnedStatics[i].category
+                        and PWS_spawnedStatics[i].shape
+                        and PWS_spawnedStatics[i].x
+                        and PWS_spawnedStatics[i].y
                         then
                             local _data = {}
-                            if PWS_spawnedStaticsTable[i].coalition == 2 then _coalition = country.id.CJTF_BLUE else _coalition = country.id.CJTF_RED end
-                            if PWS_spawnedStaticsTable[i].objectCategory==3 then 
+                            if PWS_spawnedStatics[i].coalition == 2 then _coalition = country.id.CJTF_BLUE else _coalition = country.id.CJTF_RED end
+                            if PWS_spawnedStatics[i].objectCategory==3 then 
                                 _data.objectCategory="STATIC"
-                            elseif PWS_spawnedStaticsTable[i].objectCategory==4 then
+                            elseif PWS_spawnedStatics[i].objectCategory==4 then
                                 _data.objectCategory="BASE"
                                 _data.freq=225.1
                             end
-                            _data.groupName = PWS_spawnedStaticsTable[i].name
+                            _data.groupName = PWS_spawnedStatics[i].name
                             _data.units={{
-                                type=PWS_spawnedStaticsTable[i].type,
-                                category = PWS_spawnedStaticsTable[i].category,
-                                shape = PWS_spawnedStaticsTable[i].shape,
+                                type=PWS_spawnedStatics[i].type,
+                                category = PWS_spawnedStatics[i].category,
+                                shape = PWS_spawnedStatics[i].shape,
                             }}
-                            _data.x = PWS_spawnedStaticsTable[i].x
-                            _data.y = PWS_spawnedStaticsTable[i].y
-                            _data.heading = PWS_spawnedStaticsTable[i].heading
+                            _data.x = PWS_spawnedStatics[i].x
+                            _data.y = PWS_spawnedStatics[i].y
+                            _data.heading = PWS_spawnedStatics[i].heading
                             SpawnMe(_data)
-                            restoredStatics = restoredStatics + 1
+                            restored = restored + 1
                         else
                             Log("Persistent World | Restoring statics : One loop skip, a nil value")
                         end	
                     end
-                    Log("Persistent World | Restored "..restoredStatics.." Static(s)")
+                    Log("Persistent World | Restored "..restored.." Static(s)")
+                    OutText("Persistent World | Restored "..restored.." Static(s)",5)
                 end
             else
-                Log("Persistent World | No Spawned statics save file")        
+                Log("Persistent World | No Spawned statics datas")
+                OutText("Persistent World | No Spawned statics datas",5)
             end
         end
-        --%%% LOAD MARKS %%%
-        if saveMarksBlue == true or saveMarksRed == true then
-            if FileExists(marksSaveFile) then	
-                Log("Persistent World | Found marks save file")
-                dofile(marksSaveFile)
-                restoredMarks = 0
-                if PWS_marksTable then           
-                    for i = 1, #PWS_marksTable do
-                        if PWS_marksTable[i]
-                        and PWS_marksTable[i].coalition
-                        and PWS_marksTable[i].idx
-                        and PWS_marksTable[i].text
-                        and PWS_marksTable[i].pos
+    end
+    local function LoadMarks()
+        if SAVE_MARKS_BLUE == true or SAVE_MARKS_RED == true then
+            if FileExists(MARKS_FILE) then	
+                Log("Persistent World | Found marks datas")
+                dofile(MARKS_FILE)
+                local restored = 0
+                if PWS_marks then           
+                    for i = 1, #PWS_marks do
+                        if PWS_marks[i]
+                        and PWS_marks[i].coalition
+                        and PWS_marks[i].idx
+                        and PWS_marks[i].text
+                        and PWS_marks[i].pos
                         then
-                            trigger.action.markToCoalition(PWS_marksTable[i].idx , PWS_marksTable[i].text , PWS_marksTable[i].pos, PWS_marksTable[i].coalition , false) --optionnal ,string message)
-                            restoredMarks = restoredMarks + 1
+                            trigger.action.markToCoalition(PWS_marks[i].idx , PWS_marks[i].text , PWS_marks[i].pos, PWS_marks[i].coalition , false) --optionnal ,string message)
+                            restored = restored + 1
                         else
                             DebugLog("Persistent World | Restoring Marks : One loop skip, a nil value")
                         end	
                         --i = i+1
                     end
-                    Log("Persistent World | Restored "..restoredMarks.." Mark(s)")
+                    Log("Persistent World | Restored "..restored.." Mark(s)")
+                    OutText("Persistent World | Restored "..restored.." Mark(s)",5)
                 end
             else		
-                Log("Persistent World | No marks save file")
-                PWS_marksTable = {}
+                Log("Persistent World | No marks datas")
+                OutText("Persistent World | No marks datas",5)
+                PWS_marks = {}
             end
         end
-        --%%% LOAD WAREHOUSES %%%
-        if saveWarehouses==true and FileExists(warehousesSaveFile) then
-            dofile(warehousesSaveFile)
-            Log("Persistent World | Found warehouses save file ")
+    end
+    local function LoadWarehouses()
+        if SAVE_WAREHOUSES==true and FileExists(WAREHOUSES_FILE) then
+            dofile(WAREHOUSES_FILE)
+            Log("Persistent World | Found Warehouses datas")
             local airbases = world.getAirbases()
             for _, airbase in ipairs(airbases) do
-                if PWS_warehousesTable[airbase:getName()] then
+                if PWS_warehouses[airbase:getName()] then
                     local warehouse=airbase:getWarehouse()
                     Log("Persistent World | Warehouse found for "..airbase:getName().."")
-                    local liquids = PWS_warehousesTable[airbase:getName()]["liquids"]
+                    local liquids = PWS_warehouses[airbase:getName()]["liquids"]
                     for liquidType, LiquidQty in pairs (liquids) do
                         warehouse:setLiquidAmount(liquidType, LiquidQty)
                     end
-                    local weapons = PWS_warehousesTable[airbase:getName()]["weapon"]
+                    local weapons = PWS_warehouses[airbase:getName()]["weapon"]
                     for weaponType, qty in pairs(weapons) do
                         warehouse:setItem(weaponType, qty)
                     end
-                    local aircraft = PWS_warehousesTable[airbase:getName()]["aircraft"]
+                    local aircraft = PWS_warehouses[airbase:getName()]["aircraft"]
                     for aircraftType, aircraftQty in pairs(aircraft) do
                         warehouse:setItem(aircraftType, aircraftQty)
                     end
-                else Log("Persistent World | No warehouse for "..airbase:getName().."")
+                else Log("Persistent World | No Warehouse for "..airbase:getName().."")
                 end
             end
-            Log("Persistent World | Warehouses stocks restored")
+            Log("Persistent World | Restored Warehouses stocks ")
+            OutText("Persistent World | Restored Warehouses stocks",5)
         else
-            Log("Persistent World | No warehouses datas")
-            PWS_warehousesTable = {}
+            Log("Persistent World | No Warehouses datas")
+            OutText("Persistent World | No Warehouses datas",5)
+            PWS_warehouses = {}
         end
-        --%%% SCHEDULE %%%
-        ScheduledSaveAll()
-        --%%% EVENT LOOP - ON DEAD, LOST, KILL %%%
-        PWS.onDeadEventHandler = {}
-        function PWS.onDeadEventHandler:onEvent(event)
+    end
+    local function LoadFlags()
+        if SAVE_FLAG==true and FileExists(FLAGS_FILE) then
+            dofile(FLAGS_FILE)
+            Log("Persistent World | Found flags datas")
+            local nb=0
+            for k,v in pairs(PWS_flags) do
+                trigger.action.setUserFlag(k,v)
+                nb=nb+1
+            end
+            Log("Persistent World | Restored flags ("..nb..")")
+            OutText("Persistent World | Restored flags ("..nb..")",5)
+        else
+            Log("Persistent World | No flags datas")
+            OutText("Persistent World | No flags datas",5)
+            PWS_ops = {}
+        end
+    end
+    local function LoadOps()
+        if SAVE_OPS==true and FileExists(OPS_FILE) then
+            dofile(OPS_FILE)
+            Log("Persistent World | Found PWS_ops datas")
+            Log("Persistent World | Restored PWS_ops")
+            OutText("Persistent World | Restored PWS_ops",5)
+        else
+            Log("Persistent World | No PWS_ops")
+            OutText("Persistent World | No PWS_ops",5)
+            PWS_ops = {}
+        end
+    end
+    local function LoadDatas()
+        if SAVE_DATAS==true and FileExists(DATAS_FILE) then
+            dofile(DATAS_FILE)
+            Log("Persistent World | Found PWS_datas")
+            Log("Persistent World | Restored PWS_datas")
+            OutText("Persistent World | Restored PWS_datas",5)
+        else
+            Log("Persistent World | No PWS_datas")
+            OutText("Persistent World | No PWS_datas",5)
+            PWS_ops = {}
+        end
+    end
+    local function LoadAll()
+        ScheduleFunction(function () LoadDeadUnits() end, nil, GetTime()+1)
+        ScheduleFunction(function () LoadDeadStatics() end, nil, GetTime()+2)
+        ScheduleFunction(function () LoadSpawnedUnits() end, nil, GetTime()+3)
+        ScheduleFunction(function () LoadSpawnedStatics() end, nil, GetTime()+4)
+        ScheduleFunction(function () LoadMarks() end, nil, GetTime()+5)
+        ScheduleFunction(function () LoadWarehouses() end, nil, GetTime()+6)
+        -- ScheduleFunction(function () LoadFlags() end, nil, GetTime()+8)
+        ScheduleFunction(function () LoadOps() end, nil, GetTime()+7)
+        ScheduleFunction(function () LoadDatas() end, nil, GetTime()+8)
+    end
+    local function SetFlag(text)
+        local str=string.gsub(text, pwssetflag, "", n)
+    end
+    local function SetItem(text,x,y,z)
+        local str=string.gsub(text, pwssetitem, "", n)
+    end
+
+--%%%%% MAIN () %%%%%
+    --> Debug Mode
+    if DEBUG_MODE == true then
+        SAVE_SCHEDULE = DEBUG_SAVE_SCHEDULE
+    end
+    --> Loading message
+    OutText("Persistent World | Loading...  -  Credits : JGi | Quéton 1-1", 5)
+    Log("Persistent World | Loading...  -  Credits : JGi | Quéton 1-1")
+    Log("Persistent World | Save folder : "..SAVE_DIR)
+    Log("Persistent World | Tips : you can save any data in global var PWS_ops{}. Operations statut within the mission for example")
+    if os ~= nil then
+        if IsDir(SAVE_DIR)==false then 
+            MkDir(SAVE_DIR)
+        end
+        if USE_MANUAL_SAVE_AND_LOAD==false then LoadAll() ScheduledSaveAll() end
+        PWS_event.onDead = {}
+        function PWS_event.onDead:onEvent(event)
             if event.id == world.event.S_EVENT_DEAD or event.id == world.event.S_EVENT_UNIT_LOST then --or event.id == world.event.S_EVENT_KILL then
                 DebugLog("New event : DEAD")
                 if event.initiator then --and event.initiator:getCoalition() ~= nil then
@@ -9001,26 +9240,26 @@
                             deadUnitType			 = event.target:getTypeName()
                         else
                         end
-                        if ( deadUnitCoalition == 1 or deadUnitCoalition == 2 and saveDeadBlue == true) then	
+                        if (deadUnitCoalition == 1 and SAVE_DEAD_RED == true or deadUnitCoalition == 2 and SAVE_DEAD_BLUE == true) then	
                             if deadUnitObjectCategory == 1 then -- UNIT
                                 if ( deadUnitCategory == 2 or deadUnitCategory == 3 ) then -- GROUND_UNIT or SHIP
                                     DebugLog("DEAD event.initiator type is Unit")
                                     local _match = 0
-                                    for i=1, #ignoredTypesToDeadList do
-                                        if StrMatch(deadUnitType, ignoredTypesToDeadList[i]) then _match = _match + 1 end
+                                    for i=1, #IGNORED_TYPES_TO_DEAD_LIST do
+                                        if StrMatch(deadUnitType, IGNORED_TYPES_TO_DEAD_LIST[i]) then _match = _match + 1 end
                                     end
-                                    for i=1, #ignoredNamesToDeadList do
-                                        if StrMatch(deadUnitName, ignoredNamesToDeadList[i]) then _match = _match + 1 end
+                                    for i=1, #IGNORED_NAMES_TO_DEAD_LIST do
+                                        if StrMatch(deadUnitName, IGNORED_NAMES_TO_DEAD_LIST[i]) then _match = _match + 1 end
                                     end
                                     if _match ~= 0 then  
                                         DebugLog(deadUnitName.." ignored")
                                     else
                                         _match = 0
-                                        for i=1, #PWS_deadUnitsTable do
-                                            if PWS_deadUnitsTable[i] == deadUnitName then _match = _match + 1 end
+                                        for i=1, #PWS_deadUnits do
+                                            if PWS_deadUnits[i] == deadUnitName then _match = _match + 1 end
                                         end
                                         if _match == 0 then
-                                            PWS_deadUnitsTable[#PWS_deadUnitsTable+1] = deadUnitName
+                                            PWS_deadUnits[#PWS_deadUnits+1] = deadUnitName
                                         end
                                         DebugLog(deadUnitName.." added to dead list.")
                                     end	
@@ -9028,11 +9267,11 @@
                                 end
                             elseif deadUnitObjectCategory == 3 then	-- STATIC
                                 local _match = 0
-                                for i=1, #PWS_deadStaticsTable do
-                                    if PWS_deadStaticsTable[i] == deadUnitName then _match = _match + 1 end
+                                for i=1, #PWS_deadStatics do
+                                    if PWS_deadStatics[i] == deadUnitName then _match = _match + 1 end
                                 end
                                 if _match == 0 then
-                                    PWS_deadStaticsTable[#PWS_deadStaticsTable+1] = deadUnitName
+                                    PWS_deadStatics[#PWS_deadStatics+1] = deadUnitName
                                 end
                                 DebugLog("Static "..deadUnitName.." destroyed")
                             else
@@ -9046,10 +9285,8 @@
                 end
             end
         end
-        world.addEventHandler(PWS.onDeadEventHandler)
-        --%%% EVENT LOOP - ON BIRTH %%%
-        PWS.onBirthEventHandler = {}
-        function PWS.onBirthEventHandler:onEvent(event)
+        PWS_event.onBirth = {}
+        function PWS_event.onBirth:onEvent(event)
             if event.id == world.event.S_EVENT_BIRTH then
                 DebugLog("New event : BIRTH")
                 if event.initiator then
@@ -9074,24 +9311,24 @@
                         birthUnitPosY 		            = currentPos.z
                         birthUnitPosX 		            = currentPos.x
 
-                        if (birthCoalition == 1 and saveBirthRed == true or birthCoalition == 2 and saveBirthBlue == true) then
+                        if (birthCoalition == 1 and SAVE_BIRTH_RED == true or birthCoalition == 2 and SAVE_BIRTH_BLUE == true) then
                             if birthObjectCategory == 1 and birthUnitCategory == 2 then -- UNIT
                                 local _match = 0
-                                for i=1, #ignoredNamesToUnitBirthList do
-                                    if StrMatch(birthUnitName, ignoredNamesToUnitBirthList[i]) then _match = _match + 1 end
+                                for i=1, #IGNORED_NAMES_TO_UNITS_BIRTH_LIST do
+                                    if StrMatch(birthUnitName, IGNORED_NAMES_TO_UNITS_BIRTH_LIST[i]) then _match = _match + 1 end
                                 end
                                 local _pMatch = 0
-                                for i=1, #namePatternList do
-                                    if useNamePattern==true and not StrMatch(birthUnitName, namePatternList[i]) then _pMatch = _pMatch + 1 end
+                                for i=1, #NAMES_PATTERN_LIST do
+                                    if USE_NAME_PATTERN==true and not StrMatch(birthUnitName, NAMES_PATTERN_LIST[i]) then _pMatch = _pMatch + 1 end
                                 end
                                 if _match ~=0 or _pMatch ~=0 then  
                                     Log("Persistent World | Birth Unit ignored")
                                 else
                                     local groupMatch = 0
-                                    for i = 1, #PWS_spawnedUnitsTable do
-                                        if PWS_spawnedUnitsTable[i].groupName == birthGroupName then
+                                    for i = 1, #PWS_spawnedUnits do
+                                        if PWS_spawnedUnits[i].groupName == birthGroupName then
                                             groupMatch = groupMatch+1
-                                            PWS_spawnedUnitsTable[i].units[#PWS_spawnedUnitsTable[i].units+1] = {
+                                            PWS_spawnedUnits[i].units[#PWS_spawnedUnits[i].units+1] = {
                                                 type = birthUnitType,
                                                 name = birthUnitName,
                                                 y = birthUnitPosY,
@@ -9101,7 +9338,7 @@
                                         end
                                     end
                                     if groupMatch == 0 then
-                                        PWS_spawnedUnitsTable[#PWS_spawnedUnitsTable+1] = {
+                                        PWS_spawnedUnits[#PWS_spawnedUnits+1] = {
                                             coalition = birthCoalition,
                                             objectCategory = birthObjectCategory,
                                             objectSubCategory = birthUnitCategory,
@@ -9117,24 +9354,24 @@
                                             }
                                         }
                                     end
-                                    ignoredTypesToDeadList[#ignoredTypesToDeadList+1] = birthUnitName
+                                    IGNORED_TYPES_TO_DEAD_LIST[#IGNORED_TYPES_TO_DEAD_LIST+1] = birthUnitName
                                 end											
                             else
                             end
                         else
                         end
                     --> STATIC AND BASE (FARP)
-                    elseif Object.getCategory(event.initiator) == 4 and event.initiator:getCoalition() and savedTypesToStaticBirthList[event.initiator:getDesc().typeName]
-                        or Object.getCategory(event.initiator) == 3 and event.initiator:getCoalition() and savedTypesToStaticBirthList[event.initiator:getDesc().typeName]
+                    elseif Object.getCategory(event.initiator) == 4 and event.initiator:getCoalition() and SAVED_TYPES_TO_STATICS_BIRTH_LIST[event.initiator:getDesc().typeName]
+                        or Object.getCategory(event.initiator) == 3 and event.initiator:getCoalition() and SAVED_TYPES_TO_STATICS_BIRTH_LIST[event.initiator:getDesc().typeName]
                         then
-                        if (event.initiator:getCoalition() == 1 and saveStaticsBirthRed == true or event.initiator:getCoalition() == 2 and saveStaticsBirthBlue == true) then
-                            PWS_spawnedStaticsTable[#PWS_spawnedStaticsTable+1] = {
+                        if (event.initiator:getCoalition() == 1 and SAVE_STATICS_BIRTH_RED == true or event.initiator:getCoalition() == 2 and SAVE_STATICS_BIRTH_BLUE == true) then
+                            PWS_spawnedStatics[#PWS_spawnedStatics+1] = {
                                 objectCategory = Object.getCategory(event.initiator),
                                 coalition = event.initiator:getCoalition(),
                                 name = event.initiator:getName(),
                                 type = event.initiator:getDesc().typeName,
-                                category = savedTypesToStaticBirthList[event.initiator:getDesc().typeName],
-                                shape = staticTypesAndShape[event.initiator:getDesc().typeName],
+                                category = SAVED_TYPES_TO_STATICS_BIRTH_LIST[event.initiator:getDesc().typeName],
+                                shape = STATIC_TYPES_AND_SHAPES[event.initiator:getDesc().typeName],
                                 x = event.initiator:getPoint().x,
                                 y = event.initiator:getPoint().z,
                                 heading = math.atan2(event.initiator:getPosition().x.z, event.initiator:getPosition().x.x)
@@ -9147,11 +9384,11 @@
                 end
             end
         end
-        world.addEventHandler(PWS.onBirthEventHandler)
-        --%%% EVENT LOOP - MARKS %%%
-        PWS.onMarkEventHandler={}
-        function PWS.onMarkEventHandler:onEvent(event)
+        PWS_event.onMark={}
+        function PWS_event.onMark:onEvent(event)
             if world.event.S_EVENT_MARK_CHANGE == event.id and event.coalition ~= 0 then
+                if (StrMatch(event.text,"pwsnearestbase")) then NearestAirbase(event.pos)
+                end
             elseif world.event.S_EVENT_MARK_REMOVED == event.id and event.coalition ~= 0 then
                 if (StrMatch(event.text, "&²²")) then
                     ScheduleFunction(function()
@@ -9159,17 +9396,29 @@
                         if not s then s=25 elseif s<="020" then s=25 else s=ToNumber(s) end
                         Explode({x=event.pos.x, y=event.pos.y, z=event.pos.z},s)
                     end, nil, timer.getTime() + 5 )
-                elseif (StrMatch(event.text, "pwsclearmsg")) then
-                    ClearMsg()
-                    DebugLog("ClearMsg()")
-                elseif (StrMatch(event.text, "pwssavenow")) then
-                    SaveAll()
-                    DebugLog("SaveAll()")
+                elseif (StrMatch(event.text,"pwsclearmsg")) then ClearMsg()
+                elseif (StrMatch(event.text,"pwssaveall")) then SaveAll()
+                elseif (StrMatch(event.text,"pwsloadall")) then LoadAll()
+                elseif (StrMatch(event.text,"pwsresetsave")) then ResetSavefiles()
+                elseif (StrMatch(event.text,"pwssavemarks")) then SaveMarks()
+                elseif (StrMatch(event.text,"pwssavewarehouses")) then SaveWarehouses()
+                elseif (StrMatch(event.text,"pwsloadwarehouses")) then LoadWarehouses()
+                elseif (StrMatch(event.text,"pwssaveflags")) then SaveFlags()
+                elseif (StrMatch(event.text,"pwsloadflags")) then LoadFlags()
+                elseif (StrMatch(event.text,"pwssaveops")) then SaveOps()
+                elseif (StrMatch(event.text,"pwsloadops")) then LoadOps()
+                elseif (StrMatch(event.text,"pwssavedatas")) then SaveDatas()
+                elseif (StrMatch(event.text,"pwsloaddatas")) then LoadDatas()
+                elseif (StrMatch(event.text,"pwssaveobjectsmap")) then SaveObjectsMaps()
+                --elseif (StrMatch(event.text,"pwssetflag")) then SetFlag(event.text)
+                --elseif (StrMatch(event.text,"pwssetitem")) then SetItem(event.text,event.pos.x,event.pos.y,event.pos.z)
                 end
             end
         end
-        world.addEventHandler(PWS.onMarkEventHandler)
+        world.addEventHandler(PWS_event.onBirth)
+        world.addEventHandler(PWS_event.onDead)
+        world.addEventHandler(PWS_event.onMark)
     else
-        Msg("Persistent World | Error, MissionScripting.lua 'sanitize'.", 10)
+        OutText("Persistent World | Error, MissionScripting.lua 'sanitize'.", 10)
         Log("Persistent World | Error, MissionScripting.lua 'sanitize'.")
     end
