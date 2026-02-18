@@ -6,11 +6,15 @@ Téléchargement / Download
 Pour télécharger le script, rdv à la page [Releases](https://github.com/Queton1-1/DCS-Persistent-World-Script/releases)
 
 # = FR =  
-Script pour sauvegarder la progression en mission si implémenté.  
-Les unitées sol, statiques et navires (hors portes-avions) détruits seront listés et retirés au prochain lancement.  
-Les groupes, unités & marks spawnés pendant la partie peuvent être sauvés.  
-Basé sur les travaux des excellents Pikey et Surrexen mais énormément de refonte et beaucoup d'ajout.  
-
+Script pour sauvegarder la progression en mission si implémenté.   
+Inspiré à la base des travaux de l'excellent Pikey.  
+Ce qui est sauvegardé :
+- Unités et Statics détruits
+- unités et Statics spawnés
+- Marks
+- Warehouses (stocks des bases)
+- Flags (déclencheurs)
+- Variables globale libre de type table PWS_ops et PWS_datas
 
 **Mises à jour / Updates**
 --  
@@ -53,9 +57,15 @@ Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved
   
 # = EN =  
 Script to save mission progression.  
-All ground units, statics and boats (not carriers) destroyed will be list and destroy on next load.  
 During game, spawned units can be saved.  
-Based on the awesome Pikey and Surrexen works but with lots of rebuilds et adds.  
+Based on the awesome Pikey works.  
+Can save :
+- Units et Statics dead
+- units et Statics spawned
+- Marks
+- Warehouses
+- Flags
+- Global var table PWS_ops et PWS_datas
 
 **Updates**  
 --  
