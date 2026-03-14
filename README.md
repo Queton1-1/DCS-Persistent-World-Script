@@ -50,11 +50,20 @@ Le dossier par défaut pour les saves est \Saved Games\DCS.Saves
 Rien de plus simple.  
 Si le script est bien chargé, c'est automatique et des messages s'afficheront à chaque sauvegarde.  
 Les fichiers de sauvegardes se situerons dans le dossier Missions de DCS (/Saved Games/DCS.Persistence) >>(à partir de v2.16)  
+Des commandes sont disponibles via Marks sur la carte F10
+  - `pwssaveobjectsmap` : génère un fichier texte contenant les libélés des items de Warehouse
+    
+  - `pwssetflag #name #value` : regle le déclencheur
+  - `pwsloadflags` : charge la valeur des déclencheurs sauvegardés précédement
+    
+  - `pwsadditem #item #nombre` : ajoute l'item au stock de la base la plus proche
+  - `pwsdroptiem #item #nombre` : enleve l'item au stock de la base la plus proche
+  - `pwsaddfuel #qty` : ajoute la quantité de fuel au stock de la base la plus proche
+  - `pwsdropfuel #qty` : enleve la quantité de fuel au stock de la base la plus proche
+    
+  - `pwsresetsave` : efface les fichiers de savegardes présents pour la mission
 
 
-  
-  
-  
 # = EN =  
 Script to save mission progression.  
 During game, spawned units can be saved.  
